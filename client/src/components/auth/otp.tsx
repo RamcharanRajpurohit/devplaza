@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Mail, RefreshCw } from 'lucide-react';
 
-export default function DevPlazaOTP() {
+export default function DevPlazaOTP( data: {email:string}) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const email = "user@example.com"; // This would come from props or context
+ 
+
+ 
 
   useEffect(() => {
     // Focus first input on mount
@@ -84,8 +86,26 @@ const handlePaste = (e: HandlePasteEvent): void => {
     if (otpCode.length === 6) {
       console.log('OTP submitted:', otpCode);
       // Handle OTP verification
+      fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ otp: otpCode, email: data.email }),
+    }).then(response => response.json()).then(data => {
+        console.log('OTP verification response:', data);
+        if (data.success) { // intrrnaky it sabes now
+          // Redirect to dashboard or next step
+          console.log('OTP verified successfully');
+        }
+      }).catch(error => {
+        console.error('Error verifying OTP:', error);
+      });
+    } else {
+      alert('Please enter a valid 6-digit OTP.');
     }
   };
+
 
   const handleResend = async () => {
     setIsResending(true);
@@ -128,7 +148,7 @@ const handlePaste = (e: HandlePasteEvent): void => {
           <h2 className="text-white text-xl font-normal mb-2">Verify your email</h2>
           <p className="text-neutral-400 text-sm">
             We've sent a 6-digit verification code to{' '}
-            <span className="text-white font-medium">{email}</span>
+            <span className="text-white font-medium">{data.email}</span>
           </p>
         </div>
 

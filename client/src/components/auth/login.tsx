@@ -1,25 +1,45 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Github } from 'lucide-react';
 
-export default function DevPlazaSignUp() {
+export default function DevPlazaSignIn() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const validateEmail = (email:string)=>{
+    const re =  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
 
+  }
   const handleSubmit = () => {
-    console.log('Sign up submitted:', { fullName, email, password, confirmPassword, agreeTerms });
+    if(validateEmail(email)){
+      fetch("backend route",{
+        method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+
+      }).then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+        reloadwithdata(data.user);
+        
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    }
+    console.log('Form submitted:', { email, password, rememberMe });
   };
 
-  const handleGoogleSignUp = () => {
-    console.log('Google sign up clicked');
+  const handleGoogleSignIn = () => {
+    console.log('Google sign in clicked');
   };
 
-  const handleGithubSignUp = () => {
-    console.log('GitHub sign up clicked');
+  const handleGithubSignIn = () => {
+    console.log('GitHub sign in clicked');
   };
 
   const GoogleIcon = () => (
@@ -42,25 +62,25 @@ export default function DevPlazaSignUp() {
             </div>
             <h1 className="text-white text-xl font-semibold">DevPlaza</h1>
           </div>
-          <h2 className="text-white text-xl font-normal mb-8">Create your account</h2>
+          <h2 className="text-white text-xl font-normal mb-8">Sign in to your account</h2>
         </div>
 
-        {/* Social Sign Up Options */}
+        {/* Social Sign In Options */}
         <div className="space-y-3 mb-6">
           <button
-            onClick={handleGoogleSignUp}
+            onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-900"
           >
             <GoogleIcon />
-            Sign up with Google
+            Sign in with Google
           </button>
           
           <button
-            onClick={handleGithubSignUp}
+            onClick={handleGithubSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-neutral-800 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-900"
           >
             <Github className="w-5 h-5" />
-            Sign up with GitHub
+            Sign in with GitHub
           </button>
         </div>
 
@@ -72,21 +92,6 @@ export default function DevPlazaSignUp() {
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-neutral-900 text-neutral-400">or</span>
           </div>
-        </div>
-
-        {/* Full Name Input */}
-        <div className="mb-4">
-          <label htmlFor="fullName" className="block text-white text-sm font-medium mb-2">
-            Full Name
-          </label>
-          <input
-            id="fullName"
-            type="text"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-800 text-white rounded-lg border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-neutral-400"
-          />
         </div>
 
         {/* Email Input */}
@@ -128,69 +133,44 @@ export default function DevPlazaSignUp() {
           </div>
         </div>
 
-        {/* Confirm Password Input */}
-        <div className="mb-4">
-          <label htmlFor="confirmPassword" className="block text-white text-sm font-medium mb-2">
-            Confirm Password
-          </label>
-          <div className="relative">
+        {/* Remember Me and Forgot Password */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
             <input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-800 text-white rounded-lg border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-neutral-400 pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-300"
-            >
-              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Terms and Conditions */}
-        <div className="mb-6">
-          <div className="flex items-start">
-            <input
-              id="agree-terms"
+              id="remember-me"
               type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-neutral-600 rounded bg-neutral-800 mt-1"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-neutral-600 rounded bg-neutral-800"
             />
-            <label htmlFor="agree-terms" className="ml-2 block text-sm text-white">
-              I agree to the{' '}
-              <a href="#" className="text-blue-400 hover:text-blue-300 underline">
-                Terms of Service
-              </a>
-              {' '}and{' '}
-              <a href="#" className="text-blue-400 hover:text-blue-300 underline">
-                Privacy Policy
-              </a>
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-white">
+              Remember me
             </label>
           </div>
+
+          <a
+            href="#"
+            className="text-sm text-white hover:text-neutral-300 underline"
+          >
+            Forgot password?
+          </a>
         </div>
 
-        {/* Sign Up Button */}
+        {/* Login Button */}
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!agreeTerms}
-          className="w-full py-3 px-4 bg-neutral-700 text-white rounded-lg font-medium hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors duration-200 mb-6 disabled:bg-neutral-800 disabled:cursor-not-allowed"
+          className="w-full py-3 px-4 bg-neutral-700 text-white rounded-lg font-medium hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors duration-200 mb-6"
         >
-          Create Account
+          Login
         </button>
 
-        {/* Sign In Link */}
+        {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-sm text-neutral-400">
-            Already have an account?{' '}
+            Don't have an account?{' '}
             <a href="#" className="text-white hover:text-neutral-300 underline font-medium">
-              Sign in
+              Sign up
             </a>
           </p>
         </div>

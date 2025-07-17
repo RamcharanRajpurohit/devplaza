@@ -1,1 +1,79 @@
+/* Add these CSS variables to your main CSS file (e.g., src/index.css) 
+   Place this BEFORE the Tailwind imports */
+   
+:root {
+  /* Background Colors */
+  --bg-primary: #171717; /* neutral-900 */
+  --input-bg: #262626; /* neutral-800 */
+  
+  /* Text Colors */
+  --text-primary: #ffffff; /* white */
+  --text-secondary: #a3a3a3; /* neutral-400 */
+  --text-tertiary: #d4d4d4; /* neutral-300 */
+  --text-placeholder: #a3a3a3; /* neutral-400 */
+  --text-google: #374151; /* gray-700 */
+  
+  /* Border Colors */
+  --border-primary: #404040; /* neutral-700 */
+  --border-secondary: #525252; /* neutral-600 */
+  
+  /* Button Colors */
+  --btn-primary: #404040; /* neutral-700 */
+  --btn-primary-hover: #525252; /* neutral-600 */
+  --btn-github: #262626; /* neutral-800 */
+  --btn-github-hover: #404040; /* neutral-700 */
+  --btn-google: #ffffff; /* white */
+  --btn-google-hover: #f9fafb; /* gray-50 */
+  
+  /* Accent Colors */
+  --accent-primary: #3b82f6; /* blue-500 */
+  --accent-secondary: #6b7280; /* gray-500 */
+}
+/* 
+For Vite + Tailwind CSS v4 plugin setup
+Add this to your main CSS file (e.g., src/index.css or src/main.css)
+Replace your existing Tailwind imports with this content
+*/
+
 @import "tailwindcss";
+
+/* Custom Theme Configuration */
+@theme {
+  /* Custom screens */
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* Custom spacing */
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+  --spacing-128: 32rem;
+
+  /* Custom font sizes */
+  --font-size-xxs: 0.625rem;
+
+  /* Custom max widths */
+  --max-width-xxs: 16rem;
+
+  /* Custom colors using CSS variables */
+  --color-bg-primary: var(--bg-primary);
+  --color-input-bg: var(--input-bg);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-google: var(--text-google);
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-btn-primary: var(--btn-primary);
+  --color-btn-primary-hover: var(--btn-primary-hover);
+  --color-btn-github: var(--btn-github);
+  --color-btn-github-hover: var(--btn-github-hover);
+  --color-btn-google: var(--btn-google);
+  --color-btn-google-hover: var(--btn-google-hover);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+}
