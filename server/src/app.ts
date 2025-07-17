@@ -1,4 +1,6 @@
 import express, { Request, Response } from 'express';
+import authRoutes from "./routes/authRoutes";
+import bodyParser from "body-parser";
 import dotenv from 'dotenv';
 const cors = require('cors');
 import mongoose from 'mongoose';
@@ -19,7 +21,13 @@ mongoose.connect(mongoURI)
 const app = express();
 const port = process.env.PORT || 3000;
 
+
+
 app.use(express.json());
+app.use(bodyParser.json());
+// anytime a request comes in with JSON body (like from Postman), automatically parse it and give me req.body as a JS object.”
+
+app.use("/api/auth", authRoutes);
 
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -30,3 +38,13 @@ app.listen(port, () => {
 });
 
 export default app;
+
+
+
+
+
+
+
+
+
+
