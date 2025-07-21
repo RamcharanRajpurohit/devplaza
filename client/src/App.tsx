@@ -10,10 +10,28 @@ import DevPlazaRegister from './components/auth/singup'
 import AuthPage from './auth/authContext'
 
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+ const handleCredentialResponse = (response: any) => {
+    console.log('JWT Token:', response.credential);
+   
+  };
 function App() {
 
-   
+   useEffect(() => {
+  
 
+    window.google.accounts.id.initialize({
+      client_id:"390014223246-stoo8o009sudlcl10c96vfcmbmqvf4co.apps.googleusercontent.com", // or process.env in Next.js
+      callback: handleCredentialResponse,
+    });
+
+    window.google.accounts.id.prompt();
+  }, []);
 
   return (
     <>

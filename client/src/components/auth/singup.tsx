@@ -26,7 +26,7 @@ export default function DevPlazaSignUp() {
       return;
     }
     console.log('Form submitted:', { email, password });
-    fetch('to backend ',{
+    fetch('http://localhost:5000/api/auth/signup',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
