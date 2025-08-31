@@ -1,30 +1,47 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { UserTokens } from "../models/userTokens";
 
-const JWT_SECRET = "your_jwt_secret_here"; // move to env in prod
-
-export interface AuthRequest extends Request {
-  user?: any;
+interface AccessTokenPayload extends JwtPayload {
+  _id: string;
 }
 
-export const verifyToken = (
-  req: AuthRequest,
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { _id: string };
+    }
+  }
+}
+
+export const verifyAccessToken = async (
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ message: "Unauthorized. No token provided." });
+      return;
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_SECRET_KEY as string
+    ) as AccessTokenPayload;
+
+    // Extra step: check if user still has valid refreshTokens in DB
+    const userTokens = await UserTokens.findOne({ user: decoded._id });
+    if (!userTokens || userTokens.refreshToken.length === 0) {
+      return res.status(403).json({ message: "Session expired. Please log in again." });
+    }
+
+    req.user = { _id: decoded._id };
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error("verifyAccessToken error:", err);
+    res.status(403).json({ message: "Forbidden. Invalid or expired token." });
   }
 };

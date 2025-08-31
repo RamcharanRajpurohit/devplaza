@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
 import { generateAccessToken,generateAccessAndRefreshToken,generateRefreshToken } from "../utils/generateTokens";
 import bcrypt from "bcryptjs";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { User } from "../models/user";
+import { tryCatch } from "../utils/tryCatch";
+import { OAuth2Client } from "google-auth-library";
+import { UserTokens } from "../models/userTokens";
 // That’s where @types/jsonwebtoken swoops in like a superhero 💥 — it gives TypeScript the info it needs to understand the types, functions, and structure of the jsonwebtoken package.
 
 // --save-dev means you're installing it as a dev dependency 'cause types are only needed during development, not when the code is running.
-
-
-import { User } from "../models/user";
 import { generateAndSaveOTP } from "../utils/otpUtils";
 import { promises } from "dns";// read about his more 
-import jwt from "jsonwebtoken";
 
 
 // Signup
@@ -23,25 +24,28 @@ export const signup = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Username or Email already exists" });
     }
 
-    // Hash password if exists
+    // Hash password
     const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
     const newUser = await User.create({
       username,
       email,
       password: hashedPassword,
-      isVerified:false,
+      isVerified: false,
     });
-    //add into daatbase with bcrypt
-    const otpGenerated = await generateAndSaveOTP(email);
 
+    // Generate OTP for verification
+    const otpGenerated = await generateAndSaveOTP(email);
     if (!otpGenerated) {
-       return res.status(500).json({
-       success: false,
-       message: "Failed to generate OTP. Try again later.",
-       });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate OTP. Try again later.",
+      });
     }
-    res.status(201).json({ message: "User created"});
+
+    res.status(201).json({ 
+      message: "User created. OTP sent for verification." 
+    });
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ message: "Something went wrong" });
@@ -65,18 +69,44 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Create JWT
-    const {accessToken ,refreshToken} = generateAccessAndRefreshToken({ userId: user._id, email: user.email },{ userId: user._id, email: user.email });
-    user.refreshToken = refreshToken;
-    await user.save();
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        sameSite: 'none', 
-        secure: true,
-        // 🔥 this is important to use req.signedCookies
-        maxAge: 24 * 60 * 60 * 1000,
-     });
+    // Check verification
+    if (!user.isVerified) {
+      // Resend OTP
+      const otpGenerated = await generateAndSaveOTP(email);
+      if (!otpGenerated) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to generate OTP. Try again later.",
+        });
+      }
+      return res.status(403).json({ 
+        success: false,
+        message: "User not verified. OTP resent to your email." 
+      });
+    }
 
+    // Generate tokens (only if verified)
+    const { accessToken, refreshToken } = generateAccessAndRefreshToken(
+      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email }
+    );
+
+    // Save refresh token in UserTokens collection
+    let tokenDoc = await UserTokens.findOne({ user: user._id });
+    if (!tokenDoc) {
+      tokenDoc = await UserTokens.create({ user: user._id, refreshToken: [refreshToken] });
+    } else {
+      tokenDoc.refreshToken.push(refreshToken); // multi-device support
+      await tokenDoc.save();
+    }
+
+    // Set cookie
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
     res.json({ message: "Login successful", accessToken });
   } catch (error) {
@@ -86,48 +116,209 @@ export const login = async (req: Request, res: Response) => {
 };
 
 
-export const refToken = async (req: Request, res: Response): Promise<Response> => {
-  
-  const { REFRESH_TOKEN_SECRET } = process.env;
-
- const { cookies } = req;
- const { refreshToken } = cookies;
 
 
-  if (!refreshToken) {
-    return res.status(401).json({
-      message: "Refresh token required"
-    });
-  }
-
-  let decodedToken;
+export const logout = async (req: Request, res: Response) => {
   try {
-    decodedToken = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET as string);
+    const refreshToken = req.cookies?.jwt;
+    if (!refreshToken) return res.sendStatus(204); // No content
+
+    if (!req.user?._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Remove the refreshToken only for this logged-in user
+    await UserTokens.updateOne(
+      { user: req.user._id },
+      { $pull: { refreshToken } }
+    );
+
+    // Clear cookie
+    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
+    res.sendStatus(204);
   } catch (error) {
-    return res.status(401).json({
-      message: "Invalid or expired refresh token"
-    });
+    console.error("Logout error:", error);
+    res.status(500).json({ message: "Something went wrong" });
   }
+};
 
-  const { userId } = decodedToken as { userId: string };
-  const user = await User.findById(userId);
 
-  if (!user) {
-    return res.status(404).json({
-      message: "User not found"
+
+interface DecodedPayload extends JwtPayload {
+  _id: string;
+}interface AccessTokenPayload {
+  _id: string;
+}
+interface RefreshTokenPayload {
+  _id: string;
+}
+
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.sendStatus(401);
+
+    const oldRefreshToken = cookies.jwt;
+    res.clearCookie("jwt", { httpOnly: true });
+
+    const foundTokenDoc = await UserTokens.findOne({ refreshToken: oldRefreshToken }).populate("user");
+
+    if (!foundTokenDoc) {
+      // possible token reuse detection
+      try {
+        const decoded = jwt.verify(
+          oldRefreshToken,
+          process.env.REFRESH_SECRET_KEY as string
+        ) as RefreshTokenPayload;
+
+        // wipe all refresh tokens for this hacked user
+        await UserTokens.updateOne(
+          { user: decoded._id },
+          { $set: { refreshToken: [] } }
+        );
+      } catch (err) {
+        // ignore if invalid
+      }
+      return res.sendStatus(403);
+    }
+
+    // filter out the old refresh token
+    const newRefreshTokenArray = foundTokenDoc.refreshToken.filter(
+      (rt) => rt !== oldRefreshToken
+    );
+
+    // verify old refresh token
+    let decoded: RefreshTokenPayload;
+    try {
+      decoded = jwt.verify(
+        oldRefreshToken,
+        process.env.REFRESH_SECRET_KEY as string
+      ) as RefreshTokenPayload;
+    } catch (err) {
+      await UserTokens.updateOne(
+        { user: foundTokenDoc.user._id },
+        { $set: { refreshToken: [] } }
+      );
+      return res.sendStatus(403);
+    }
+
+    if (foundTokenDoc.user._id.toString() !== decoded._id) {
+      await UserTokens.updateOne(
+        { user: foundTokenDoc.user._id },
+        { $set: { refreshToken: [] } }
+      );
+      return res.sendStatus(403);
+    }
+
+    // Generate new tokens
+    const accessToken = jwt.sign(
+      { _id: foundTokenDoc.user._id.toString() } as AccessTokenPayload,
+      process.env.ACCESS_SECRET_KEY as string,
+      { expiresIn: "15m" }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { _id: foundTokenDoc.user._id.toString() } as RefreshTokenPayload,
+      process.env.REFRESH_SECRET_KEY as string,
+      { expiresIn: "1d" }
+    );
+
+    foundTokenDoc.refreshToken = [...newRefreshTokenArray, newRefreshToken];
+    await foundTokenDoc.save();
+
+    res.cookie("jwt", newRefreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
     });
-  }
 
-  if (user.refreshToken !== refreshToken) {
-    return res.status(403).json({
-      message: "Refresh token mismatch"
+    res.status(200).json({ accessToken });
+  } catch (err) {
+    console.error("Refresh token error:", err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+
+
+
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
+
+export const googleAuth = async (req: Request, res: Response) => {
+  try {
+    const { id_token } = req.body;
+    if (!id_token) {
+      return res.status(400).json({ message: "Missing Google ID token" });
+    }
+
+    // verify with Google
+    const ticket = await client.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(401).json({ message: "Google token invalid" });
+    }
+
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+    console.log(payload);
+    if (!email_verified) {
+      return res.status(403).json({ message: "Email not verified with Google" });
+    }
+
+    // find or create user
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        username: name || email,
+        email,
+        password: null,          // no local password
+        isVerified: true,        // Google verified
+        googleId,
+        profilePic: picture,
+      });
+    }
+
+    // generate tokens
+    const { accessToken, refreshToken } = generateAccessAndRefreshToken(
+      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email }
+    );
+
+    // save refresh token
+    let tokenDoc = await UserTokens.findOne({ user: user._id });
+    if (!tokenDoc) {
+      tokenDoc = await UserTokens.create({
+        user: user._id,
+        refreshToken: [refreshToken],
+      });
+    } else {
+      tokenDoc.refreshToken.push(refreshToken);
+      await tokenDoc.save();
+    }
+
+    // set cookie
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({
+      message: "Google login successful",
+      accessToken,
+      user: {
+        id: user._id,
+        name: user.username,
+        email: user.email
+      },
+    });
+  } catch (err) {
+    console.error("Google auth error:", err);
+    return res.status(500).json({ message: "Something went wrong" });
   }
-
-  const accessToken = generateAccessToken({ userId: user._id, email: user.email });
-
-  return res.status(200).json({
-    message:"ho gaya bhai ho gaya",
-    token: accessToken
-  });
 };

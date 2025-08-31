@@ -24,7 +24,7 @@ export default function DevPlazaSignIn() {
       }).then(response => response.json())
       .then(data => {
         console.log('Success:', data);
-        reloadwithdata(data.user);
+      
         
       })
       .catch((error) => {

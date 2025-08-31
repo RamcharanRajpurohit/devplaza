@@ -22,10 +22,6 @@ const userSchema = new mongoose.Schema({
     type :Boolean,
     default:false,
   },
- refreshToken :{
-    type:String,
-    default:null,
-  },
   provider: {
     type: String,
     enum: ["local", "google"],
