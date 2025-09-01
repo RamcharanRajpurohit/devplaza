@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../../services/authState';
+import { useNavigate } from 'react-router-dom';
 
 export default function DevPlazaForgotPassword() {
-  const [email, setEmail] = useState('');
+  const { email: storedEmail } = useAuthStore();
+  const [email, setEmail] = useState(storedEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (!email) {
@@ -21,12 +25,24 @@ export default function DevPlazaForgotPassword() {
     setIsSubmitting(true);
     setError('');
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        useAuthStore.getState().setEmail(email);
+        useAuthStore.getState().setIsVerifying(true);
+        navigate('/auth/otp');
+      }
+    } catch (error) {
+      setError('Failed to send reset email');
+    } finally {
       setIsSubmitting(false);
-      setIsEmailSent(true);
-      console.log('Password reset email sent to:', email);
-    }, 2000);
+    }
   };
 
   const isValidEmail = (email:string) => {

@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import { generateAccessToken,generateAccessAndRefreshToken,generateRefreshToken } from "../utils/generateTokens";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { User } from "../models/user";
-import { tryCatch } from "../utils/tryCatch";
 import { OAuth2Client } from "google-auth-library";
 import { UserTokens } from "../models/userTokens";
 // That’s where @types/jsonwebtoken swoops in like a superhero 💥 — it gives TypeScript the info it needs to understand the types, functions, and structure of the jsonwebtoken package.
@@ -11,8 +9,7 @@ import { UserTokens } from "../models/userTokens";
 // --save-dev means you're installing it as a dev dependency 'cause types are only needed during development, not when the code is running.
 import { generateAndSaveOTP } from "../utils/otpUtils";
 import { promises } from "dns";// read about his more 
-
-
+import { User } from "../models/user";
 // Signup
 export const signup = async (req: Request, res: Response) => {
   try {

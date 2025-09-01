@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   User, 
   Trophy, 
@@ -25,167 +26,141 @@ import {
   AlertCircle,
   FireExtinguisher,
   Users,
-  ExternalLink
+  ExternalLink,
 } from 'lucide-react';
 
- const data = {
-  github: {
-    platform: "GitHub",
-    name: "Ramcharan Rajpurohit",
-    bio: "IIT Jodhpur Civil Engineering student who builds both bridges AND web apps! 🌉💻 MERN stack enthusiast + DSA problem solver = full-stack civil engineer! 🚀",
-    followers: 12,
-    repos: 9,
-    avatar: "https://avatars.githubusercontent.com/u/141803837?v=4"
-  },
-  leetcode: {
-    platform: "LeetCode",
-    name: "Ramcharan",
-    about: "",
-    country: "India",
-    avatar: "https://assets.leetcode.com/users/default_avatar.jpg",
-    rank: 866842,
-    reputation: 0,
-    easySolved: 53,
-    mediumSolved: 76,
-    hardSolved: 21,
-    totalSolved: 150,
-    contest: {
-      attended: 3,
-      rating: 1419.191,
-      globalRanking: 543052,
-      topPercentage: 75.23
-    }
-  },
-  codeforces: {
-    platform: "Codeforces",
-    name: "",
-    handle: "Ramcharanrajpurohit",
-    rating: 1033,
-    maxRating: 1033,
-    rank: "newbie",
-    avatar: "https://userpic.codeforces.org/no-title.jpg",
-    solvedCount: 19
-  },
-  gfg: {
-    userInfo: {
-      name: "Ramcharan",
-      profile_image_url: "https://media.geeksforgeeks.org/img-practice/user_web-1598433228.svg",
-      institute_name: "Indian Institute of Technology (IIT) Jodhpur",
-      score: 279,
-      monthly_score: 38,
-      total_problems_solved: 68,
-      institute_rank: 350,
-      pod_solved_longest_streak: 8
-    },
-    submissions: {
-      Easy: {
-        "700174": { slug: "left-view-of-binary-tree", pname: "Left View of Binary Tree", lang: "cpp" }
-      },
-      Medium: {
-        "700150": { slug: "merge-sort", pname: "Merge Sort", lang: "cpp" }
-      },
-      Hard: {
-        "700494": { slug: "alien-dictionary", pname: "Alien Dictionary", lang: "cpp" }
-      }
-    }
-  },
-  codechef: {
-    platform: "CodeChef",
-    name: "b23ci1032",
-    handle: "b23ci1032",
-    rating: "1413",
-    maxRating: "1413",
-    stars: "★★",
-    contestsParticipated: 2,
-    problemsSolved: "168"
-  },
-  code360: {
-    data: {
-      name: "Ramcharan",
-      image: "https://p.naukimg.com/jphotoV1/s244:LukcMTq82wcdH7m3VwgEbp02y3Upa8w6zyaSJdzVyIJSAVwlsXxS8cTb",
-      college: "Indian Institute of Technology, Jodhpur",
-      graduation_year: 2027,
-      about: "I'm a 3rd-year B.Tech student at IIT Jodhpur with a strong foundation in Full Stack Web Development, Data Structures, and Software Engineering. Skilled in the MERN stack (MongoDB, Express, React, Node), I specialize in building scalable, performant, and user-centric web applications.",
-      user_level_name: "Champion",
-      user_exp: 4038,
-      dsa_domain_data: {
-        problem_count_data: {
-          difficulty_data: [
-            { level: "Easy", count: 11 },
-            { level: "Moderate", count: 7 },
-            { level: "Hard", count: 3 }
-          ],
-          total_count: 21
-        }
-      }
-    }
-  }
-};
+interface ProfileData {
+  // Common profile data
+  profile: {
+    name: string;
+    username: string;
+    bio: string;
+    avatar: string;
+    location: string;
+    institute: string;
+    graduationYear: number;
+    isVerified: boolean;
+    isPublic: boolean;
+    profileViews: number;
+    followers: number;
+    following: number;
+    lastRefresh: string;
+    joinedDate: string;
+  };
+  overview: {
+    totalQuestions: number;
+    totalActiveDays: number;
+    totalContests: number;
+    maxStreak: number;
+    currentStreak: number;
+    totalSubmissions: number;
+    globalRank: {
+      score: number;
+      position: number | null;
+    };
+  };
+  activityCalendar: {
+    year: number;
+    data: Array<{
+      date: string;
+      count: number;
+      level: number;
+    }>;
+  };
+  platforms: {
+    leetcode: PlatformData;
+    codeforces: PlatformData;
+    codechef: PlatformData;
+    geeksforgeeks: PlatformData;
+    code360: PlatformData;
+    github: PlatformData;
+  };
+}
+
+interface PlatformData {
+  name: string;
+  handle: string;
+  rating?: number | string;
+  rank?: string | number;
+  totalSolved?: number;
+  maxRating?: number | string;
+  stars?: string;
+  easySolved?: number;
+  mediumSolved?: number;
+  hardSolved?: number;
+  contestRating?: number;
+}
+
+interface ActivityData {
+  month: string;
+  days: number[];
+}
+
+interface PlatformCardProps {
+  platform: string;
+  data: React.ReactNode;
+  color: string;
+  icon: React.ComponentType<any>;
+  external?: boolean;
+}
+
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  subtitle?: string;
+  color?: string;
+  icon: React.ComponentType<any>;
+  trend?: number;
+}
+
+interface CircularProgressProps {
+  value: number;
+  max: number;
+  color: string;
+  size?: number;
+  showProgress?: boolean;
+}
+
+interface ActivityHeatmapProps {
+  data: ActivityData[];
+}
 
 const CodingProfileDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const { username } = useParams<{ username: string }>();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const profileData = {
-    github: {
-      platform: "GitHub",
-      name: "Ramcharan Rajpurohit",
-      bio: " IIT Jodhpur Civil Engineering student who builds both bridges AND web apps! 🌉💻 MERN stack enthusiast + DSA problem solver = full-stack civil engineer! 🚀",
-      followers: 0,
-      repos: 9,
-      avatar: "https://avatars.githubusercontent.com/u/141803837?v=4"
-    },
-    leetcode: {
-      platform: "LeetCode",
-      name: "Ramcharan",
-      rank: 13599,
-      easySolved: 69,
-      mediumSolved: 140,
-      hardSolved: 29,
-      totalSolved: 238,
-      contestRating: 1419,
-      maxRating: 1493,
-      contestsAttended: 3
-    },
-    codeforces: {
-      platform: "Codeforces",
-      handle: "Ramcharanrajpurohit",
-      rating: 1033,
-      rank: "newbie",
-      solvedCount: 19
-    },
-    gfg: {
-      name: "Ramcharan",
-      institute: "Indian Institute of Technology (IIT) Jodhpur",
-      score: 279,
-      totalSolved: 68,
-      instituteRank: 350,
-      longestStreak: 8
-    },
-    codechef: {
-      platform: "CodeChef",
-      name: "b23ci1032",
-      rating: "1413",
-      stars: "★★",
-      problemsSolved: "61"
-    },
-    codalio: {
-      totalQuestions: 319,
-      totalActiveDays: 72,
-      totalContests: 18,
-      currentStreak: 0,
-      maxStreak: 42,
-      verified: false
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:5000/api/profile/${username}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+        const data = await response.json();
+        setProfileData(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchProfile();
     }
-  };
+  }, [username]);
 
-  // Generate mock activity data for heatmap
-  const generateActivityData = () => {
+  // Fix activity data generation
+  const generateActivityData = (): ActivityData[] => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
- 
+    const activityData: ActivityData[] = [];
     
-    months.forEach((month, monthIndex) => {
-      const daysInMonth = monthIndex === 1 ? 28 : (monthIndex % 2 === 0 ? 31 : 30);
-      const monthData = [];
+    months.forEach((month) => {
+      const daysInMonth = month === 'Feb' ? 28 : month === 'Apr' || month === 'Jun' ? 30 : 31;
+      const days: number[] = [];
       
       for (let day = 0; day < daysInMonth; day++) {
         const intensity = Math.random();
@@ -195,17 +170,18 @@ const CodingProfileDashboard = () => {
         else if (intensity > 0.4) level = 2;
         else if (intensity > 0.2) level = 1;
         
-        monthData.push(level);
+        days.push(level);
       }
-      data.push({ month, days: monthData });
+      
+      activityData.push({ month, days });
     });
     
-    return data;
+    return activityData;
   };
 
   const activityData = generateActivityData();
 
-  const PlatformCard = ({ platform, data, color, icon: Icon, external = false }) => (
+  const PlatformCard: React.FC<PlatformCardProps> = ({ platform, data, color, icon: Icon, external = false }) => (
     <div className={`bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-${color}-500 transition-all duration-300 hover:shadow-lg hover:shadow-${color}-500/20 group`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
@@ -220,7 +196,7 @@ const CodingProfileDashboard = () => {
     </div>
   );
 
-  const StatCard = ({ title, value, subtitle, color = "blue", icon: Icon, trend }) => (
+  const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, color = "blue", icon: Icon, trend }) => (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
       <div className="flex items-center justify-between mb-2">
         <Icon className={`w-5 h-5 text-${color}-400`} />
@@ -236,7 +212,7 @@ const CodingProfileDashboard = () => {
     </div>
   );
 
-  const CircularProgress = ({ value, max, color, size = 120, showProgress = true }) => {
+  const CircularProgress: React.FC<CircularProgressProps> = ({ value, max, color, size = 120, showProgress = true }) => {
     const percentage = (value / max) * 100;
     const strokeDasharray = `${percentage * 2.51} 251`;
     
@@ -275,7 +251,7 @@ const CodingProfileDashboard = () => {
     );
   };
 
-  const ActivityHeatmap = ({ data }) => (
+  const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ data }) => (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium text-gray-300">Activity Heatmap</h4>
@@ -323,7 +299,7 @@ const CodingProfileDashboard = () => {
     </div>
   );
 
-  const RatingChart = () => (
+  const RatingChart: React.FC = () => (
     <div className="bg-gray-700/30 rounded-lg p-4">
       <h4 className="text-sm font-medium text-gray-300 mb-3">Rating Progress</h4>
       <div className="relative h-32">
@@ -346,11 +322,27 @@ const CodingProfileDashboard = () => {
           />
         </svg>
         <div className="absolute top-2 right-2 text-xs text-gray-400">
-          Peak: {profileData.leetcode.maxRating}
+          Peak: {profileData?.platforms.leetcode?.maxRating || 'N/A'}
         </div>
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (error || !profileData) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-red-400">{error || 'Profile not found'}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 lg:p-8">
@@ -366,16 +358,16 @@ const CodingProfileDashboard = () => {
               <div className="text-center space-y-4">
                 <div className="relative inline-block">
                   <img 
-                    src={profileData.github.avatar} 
+                    src={profileData.profile.avatar} 
                     alt="Profile" 
                     className="w-20 h-20 rounded-full border-4 border-green-500 shadow-lg"
                   />
-                  <div className="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-2 border-gray-800"></div>
+                  <div className={`absolute -bottom-1 -right-1 ${profileData.profile.isVerified ? 'bg-green-500' : 'bg-orange-500'} w-5 h-5 rounded-full border-2 border-gray-800`}></div>
                 </div>
                 
                 <div>
-                  <h2 className="text-xl font-bold text-white">{profileData.github.name.split(' ')[0]}</h2>
-                  <p className="text-green-400 text-sm">@{profileData.github.name.replace(' ', '').toLowerCase()}</p>
+                  <h2 className="text-xl font-bold text-white">{profileData.profile.name}</h2>
+                  <p className="text-green-400 text-sm">@{profileData.profile.username}</p>
                 </div>
 
                 {/* Verification Status */}
@@ -441,21 +433,21 @@ const CodingProfileDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard 
                 title="Total Questions" 
-                value={profileData.codalio.totalQuestions} 
+                value={profileData.overview.totalQuestions} 
                 subtitle="Across all platforms"
                 color="blue"
                 icon={Target}
               />
               <StatCard 
                 title="Active Days" 
-                value={profileData.codalio.totalActiveDays} 
+                value={profileData.overview.totalActiveDays} 
                 subtitle="Coding consistency"
                 color="green"
                 icon={Calendar}
               />
               <StatCard 
                 title="Total Contests" 
-                value={profileData.codalio.totalContests} 
+                value={profileData.overview.totalContests} 
                 subtitle="Competition experience"
                 color="purple"
                 icon={Trophy}
@@ -468,12 +460,12 @@ const CodingProfileDashboard = () => {
                 <h3 className="text-lg font-semibold text-white">Coding Activity</h3>
                 <div className="flex items-center space-x-4 text-sm text-gray-400">
                   <div className="flex items-center space-x-1">
-                    <Fire className="w-4 h-4 text-orange-400" />
-                    <span>Max Streak: {profileData.codalio.maxStreak}</span>
+                    <FireExtinguisher className="w-4 h-4 text-orange-400" />
+                    <span>Max Streak: {profileData.overview.maxStreak}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Activity className="w-4 h-4 text-green-400" />
-                    <span>Current: {profileData.codalio.currentStreak}</span>
+                    <span>Current: {profileData.overview.currentStreak}</span>
                   </div>
                 </div>
               </div>
@@ -497,24 +489,24 @@ const CodingProfileDashboard = () => {
                       <div className="flex items-center space-x-4">
                         <CircularProgress value={238} max={300} color="orange" size={80} />
                         <div>
-                          <div className="text-2xl font-bold text-white">{profileData.leetcode.totalSolved}</div>
+                          <div className="text-2xl font-bold text-white">{profileData.platforms.leetcode.totalSolved}</div>
                           <div className="text-gray-400 text-sm">Problems Solved</div>
-                          <div className="text-xs text-gray-500">Rank: #{profileData.leetcode.rank.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">Rank: #{profileData.platforms.leetcode.rank?.toLocaleString()}</div>
                         </div>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
-                        <div className="text-green-400 text-lg font-bold">{profileData.leetcode.easySolved}</div>
+                        <div className="text-green-400 text-lg font-bold">{profileData.platforms.leetcode.easySolved}</div>
                         <div className="text-gray-400 text-xs">Easy</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-yellow-400 text-lg font-bold">{profileData.leetcode.mediumSolved}</div>
+                        <div className="text-yellow-400 text-lg font-bold">{profileData.platforms.leetcode.mediumSolved}</div>
                         <div className="text-gray-400 text-xs">Medium</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-red-400 text-lg font-bold">{profileData.leetcode.hardSolved}</div>
+                        <div className="text-red-400 text-lg font-bold">{profileData.platforms.leetcode.hardSolved}</div>
                         <div className="text-gray-400 text-xs">Hard</div>
                       </div>
                     </div>
@@ -557,8 +549,8 @@ const CodingProfileDashboard = () => {
                         <span className="text-sm text-gray-300">LeetCode</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-white font-bold">{profileData.leetcode.contestRating}</div>
-                        <div className="text-xs text-gray-400">max: {profileData.leetcode.maxRating}</div>
+                        <div className="text-white font-bold">{profileData.platforms.leetcode.contestRating}</div>
+                        <div className="text-xs text-gray-400">max: {profileData.platforms.leetcode.maxRating}</div>
                       </div>
                     </div>
                     
@@ -568,8 +560,8 @@ const CodingProfileDashboard = () => {
                         <span className="text-sm text-gray-300">CodeChef</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-white font-bold">{profileData.codechef.rating}</div>
-                        <div className="text-xs text-gray-400">{profileData.codechef.stars}</div>
+                        <div className="text-white font-bold">{profileData.platforms.codechef.rating}</div>
+                        <div className="text-xs text-gray-400">{profileData.platforms.codechef.stars}</div>
                       </div>
                     </div>
                     
@@ -579,8 +571,8 @@ const CodingProfileDashboard = () => {
                         <span className="text-sm text-gray-300">Codeforces</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-white font-bold">{profileData.codeforces.rating}</div>
-                        <div className="text-xs text-gray-400 capitalize">{profileData.codeforces.rank}</div>
+                        <div className="text-white font-bold">{profileData.platforms.codeforces.rating}</div>
+                        <div className="text-xs text-gray-400 capitalize">{profileData.platforms.codeforces.rank}</div>
                       </div>
                     </div>
                   </div>

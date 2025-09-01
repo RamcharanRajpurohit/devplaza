@@ -2,15 +2,36 @@ import mongoose from "mongoose";
 
 const userInfoSchema = new mongoose.Schema({
   user: {
-    type: mongoose.Schema.Types.ObjectId,// ref to user model
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
     unique: true,
   },
-  // Add any fields you want later, e.g.:
-  bio: String,
+  fullName: {
+    type: String,
+    required: true,
+  },
+  bio: {
+    type: String,
+    maxLength: 500,
+  },
   profileImage: String,
-  preferences: Object,
+  location: String,
+  links: {
+    github: String,
+    linkedin: String,
+    twitter: String,
+    website: String,
+    leetcode: String,
+    hackerrank: String,
+    codechef: String,
+  },
+  skills: [String],
+  experience: {
+    years: Number,
+    currentRole: String,
+    company: String,
+  }
 }, {
   timestamps: true,
 });

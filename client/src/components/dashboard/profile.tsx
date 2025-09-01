@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { profileService } from '../../services/api';
 import { 
   User, 
   MapPin, 
@@ -17,44 +19,63 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-interface PlatformStats {
-  name: string;
-  rank: number;
-  maxRank: number;
-  problems?: number;
-}
-
 interface ContestData {
   name: string;
   count: number;
 }
 
+interface PlatformStat {
+  name: string;
+  rank: number | string;
+  maxRank: number | string;
+}
+
+interface DsaTopic {
+  name: string;
+  solved: number;
+  total: number;
+}
+
 const CodingProfileDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const { user } = useAuth();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const platformStats: PlatformStats[] = [
-    { name: 'LeetCode', rank: 1419, maxRank: 1493 },
-    { name: 'CodeChef', rank: 1426, maxRank: 1426 },
-    { name: 'CodeForces', rank: 1033, maxRank: 1033 }
-  ];
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await profileService.getProfile();
+        setProfileData(response.data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const contestData: ContestData[] = [
-    { name: 'LeetCode', count: 3 },
-    { name: 'CodeChef', count: 4 },
-    { name: 'CodeForces', count: 11 }
-  ];
+    fetchProfileData();
+  }, []);
 
-  const dsaTopics = [
-    { name: 'Dynamic Programming', solved: 54, total: 92 },
-    { name: 'Algorithms', solved: 49, total: 70 },
-    { name: 'String', solved: 37, total: 60 },
-    { name: 'DFS', solved: 31, total: 45 },
-    { name: 'HashMap and Set', solved: 29, total: 40 },
-    { name: 'BFS', solved: 27, total: 35 },
-    { name: 'Sorting', solved: 25, total: 35 },
-    { name: 'Graphs', solved: 24, total: 40 },
-    { name: 'Trees', solved: 19, total: 30 }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center">
+        <div className="text-red-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center">
+        <div className="text-red-400">{error}</div>
+      </div>
+    );
+  }
+
+  const platformStats = profileData.platformStats;
+  const contestData = profileData.contestData;
+  const dsaTopics = profileData.dsaTopics;
 
   const getProgressPercentage = (solved: number, total: number) => {
     return (solved / total) * 100;
@@ -77,8 +98,8 @@ const CodingProfileDashboard: React.FC = () => {
               R
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">Ramcharan</h1>
-              <p className="text-gray-400">@ramcharankapurohit</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">{user.name}</h1>
+              <p className="text-gray-400">@{user.username}</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -102,11 +123,11 @@ const CodingProfileDashboard: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-2 text-gray-200">
                   <MapPin className="w-4 h-4 text-red-400" />
-                  <span>India</span>
+                  <span>{user.location || 'Not specified'}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-200">
                   <Building className="w-4 h-4 text-red-400" />
-                  <span>Indian Institute of Technology</span>
+                  <span>{user.institution || 'Not specified'}</span>
                 </div>
               </div>
 
@@ -151,15 +172,15 @@ const CodingProfileDashboard: React.FC = () => {
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
                 <h3 className="text-gray-300 text-sm mb-2">Total Questions</h3>
-                <p className="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">359</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{profileData.totalQuestions}</p>
               </div>
               <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
                 <h3 className="text-gray-300 text-sm mb-2">Total Active Days</h3>
-                <p className="text-3xl font-bold bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">84</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">{profileData.totalActiveDays}</p>
               </div>
               <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
                 <h3 className="text-gray-300 text-sm mb-2">Total Contests</h3>
-                <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">18</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">{profileData.totalContests}</p>
               </div>
               <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
                 <div className="grid grid-cols-8 gap-1 mb-4">
@@ -180,18 +201,13 @@ const CodingProfileDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Contest Data and Rating Chart */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
-                <h3 className="font-semibold mb-4 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">Contest Data</h3>
                 <div className="space-y-3">
-                  {contestData.map((contest, index) => (
+                {(contestData as ContestData[]).map((contest, index) => (
                     <div key={contest.name} className="flex justify-between items-center py-2 border-b border-red-900/20">
-                      <span className="text-sm text-gray-200">{contest.name}</span>
-                      <span className="font-semibold text-red-400">{contest.count}</span>
+                        <span className="text-sm text-gray-200">{contest.name}</span>
+                        <span className="font-semibold text-red-400">{contest.count}</span>
                     </div>
-                  ))}
+                ))}
                 </div>
               </div>
 
@@ -199,10 +215,10 @@ const CodingProfileDashboard: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-semibold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">Rating</h3>
-                    <p className="text-2xl font-bold text-red-400">1419</p>
-                    <p className="text-xs text-gray-400">15 Jun 2025</p>
-                    <p className="text-xs text-gray-400">Weekly Contest 454</p>
-                    <p className="text-xs text-gray-400">Rank 13569</p>
+                    <p className="text-2xl font-bold text-red-400">{profileData.rating}</p>
+                    <p className="text-xs text-gray-400">{profileData.lastContestDate}</p>
+                    <p className="text-xs text-gray-400">{profileData.lastContestName}</p>
+                    <p className="text-xs text-gray-400">Rank {profileData.rank}</p>
                   </div>
                 </div>
                 <div className="h-32 bg-gradient-to-r from-red-900 via-red-800 to-red-700 rounded relative overflow-hidden shadow-inner">
@@ -242,19 +258,19 @@ const CodingProfileDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-red-400">Easy</span>
-                        <span className="text-xs text-gray-200">86</span>
+                        <span className="text-xs text-gray-200">{profileData.problemsSolved.easy}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-red-500">Medium</span>
-                        <span className="text-xs text-gray-200">161</span>
+                        <span className="text-xs text-gray-200">{profileData.problemsSolved.medium}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-red-600">Hard</span>
-                        <span className="text-xs text-gray-200">31</span>
+                        <span className="text-xs text-gray-200">{profileData.problemsSolved.hard}</span>
                       </div>
                     </div>
                     <div className="text-center mt-4">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">278</div>
+                      <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{profileData.totalProblemsSolved}</div>
                     </div>
                   </div>
                 </div>
@@ -274,26 +290,20 @@ const CodingProfileDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-red-400">Codechef: 61</p>
-                      <p className="text-sm text-red-500">Codeforces: 19</p>
+                      <p className="text-sm text-red-400">Codechef: {profileData.codechefRating}</p>
+                      <p className="text-sm text-red-500">Codeforces: {profileData.codeforcesRating}</p>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
-                <h3 className="font-semibold mb-4 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">Contest Rankings</h3>
-                <div className="space-y-4">
-                  {platformStats.map((platform, index) => (
+                {(platformStats as PlatformStat[]).map((platform: PlatformStat, index: number) => (
                     <div key={platform.name} className="text-center">
-                      <h4 className="text-sm font-semibold mb-1 text-gray-200">{platform.name.toUpperCase()}</h4>
-                      <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{platform.rank}</div>
-                      <div className="text-xs text-gray-400">(max: {platform.maxRank})</div>
-                      {platform.name === 'CodeForces' && (
-                        <div className="text-sm text-red-400 mt-1">Newbie</div>
-                      )}
+                        <h4 className="text-sm font-semibold mb-1 text-gray-200">{platform.name.toUpperCase()}</h4>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{platform.rank}</div>
+                        <div className="text-xs text-gray-400">(max: {platform.maxRank})</div>
+                        {platform.name === 'CodeForces' && (
+                            <div className="text-sm text-red-400 mt-1">Newbie</div>
+                        )}
                     </div>
-                  ))}
+                ))}
                 </div>
               </div>
             </div>
@@ -302,21 +312,16 @@ const CodingProfileDashboard: React.FC = () => {
             <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">Awards</h3>
-                <span className="text-sm text-gray-400">4</span>
+                <span className="text-sm text-gray-400">{profileData.awards.length}</span>
               </div>
               <div className="flex space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-700 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-900/50">
-                  <Trophy className="w-6 h-6 text-red-200" />
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-red-800 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-900/50">
-                  <Star className="w-6 h-6 text-red-200" />
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-red-900 to-red-800 rounded-full flex items-center justify-center shadow-lg shadow-red-900/50">
-                  <Star className="w-6 h-6 text-red-200" />
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-gray-700 rounded-full flex items-center justify-center shadow-lg shadow-black/50">
-                  <Award className="w-6 h-6 text-gray-200" />
-                </div>
+                {profileData.awards.map((award: any, index: number) => (
+                  <div key={index} className="w-12 h-12 bg-gradient-to-br from-red-700 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-900/50">
+                    {award.icon === 'trophy' && <Trophy className="w-6 h-6 text-red-200" />}
+                    {award.icon === 'star' && <Star className="w-6 h-6 text-red-200" />}
+                    {award.icon === 'badge' && <Award className="w-6 h-6 text-gray-200" />}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -324,7 +329,7 @@ const CodingProfileDashboard: React.FC = () => {
             <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 shadow-xl shadow-black/30">
               <h3 className="font-semibold mb-4 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">DSA Topic Analysis</h3>
               <div className="space-y-3">
-                {dsaTopics.map((topic, index) => {
+                {dsaTopics.map((topic: DsaTopic, index: number) => {
                   const percentage = getProgressPercentage(topic.solved, topic.total);
                   return (
                     <div key={topic.name} className="flex items-center space-x-4">
@@ -350,29 +355,6 @@ const CodingProfileDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-6 mt-8 shadow-xl shadow-black/30">
-          <div className="flex justify-center space-x-8 text-sm text-gray-300">
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">FAQ</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Support</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Contact Us</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Privacy</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Timeline</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Terms</span>
-            <span className="hover:text-red-400 cursor-pointer transition-colors duration-200">Refund Policy</span>
-          </div>
-          <div className="flex justify-center space-x-4 mt-4">
-            <Link className="w-5 h-5 text-gray-400 hover:text-red-400 cursor-pointer transition-colors duration-200" />
-            <span className="w-5 h-5 text-gray-400 hover:text-red-400 cursor-pointer transition-colors duration-200">𝕏</span>
-            <div className="w-5 h-5 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-red-600 hover:to-red-500 rounded cursor-pointer transition-all duration-200"></div>
-          </div>
-          <div className="text-center text-xs text-gray-500 mt-4">
-            © 2025 Codallo, Inc. All rights reserved.
-          </div>
-        </div>
-      </div>
-    </div>
   );
 };
 

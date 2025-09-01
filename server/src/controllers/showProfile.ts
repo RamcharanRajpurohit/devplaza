@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 import { fetchCodechefProfile } from "../services/codechef";
 import { fetchCode360Profile } from "../services/code360";
 
-interface MyQuery {
+interface ProfileParams {
   username: string;
 }
 
@@ -117,8 +117,10 @@ const generateAwards = (data: any) => {
   return awards;
 };
 
-export const showProfile = async (req: Request<{}, {}, {}, MyQuery>, res: Response) => {
+export const showProfile = async (req: Request<ProfileParams>, res: Response) => {
   try {
+    const { username } = req.params;
+
     const [github, leetcode, codeforces, gfg, codechef, code360] = await Promise.all([
       fetchGithubProfile("RamcharanRajpurohit"),
       fetchLeetcodeProfile("b23ci1032"),
