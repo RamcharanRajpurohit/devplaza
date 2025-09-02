@@ -39,6 +39,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4">
+      
       <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
         <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
           Login to DevPlaza
@@ -61,7 +62,7 @@ const Login: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
+              className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               placeholder="you@example.com"
             />
           </div>
@@ -76,8 +77,8 @@ const Login: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
-              placeholder="••••••••"
+              className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
+              placeholder="Password"
             />
           </div>
 
@@ -102,7 +103,7 @@ const Login: React.FC = () => {
           <div className="mt-4 text-center">
             <button 
               onClick={handleForgotPassword}
-              className="text-sm text-red-400 hover:text-red-300 transition-colors duration-200"
+              className="text-sm text-red-400 hover:cursor-pointer hover:text-red-300 transition-colors duration-200"
             >
               Forgot your password?
             </button>
@@ -110,7 +111,7 @@ const Login: React.FC = () => {
 
           <div className="mt-6 text-center">
             <span className="text-sm text-gray-400">Don't have an account?</span>
-            <Link to="/register" className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors duration-200">
+            <Link to="/auth/signup" className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors duration-200">
               Sign up
             </Link>
           </div>

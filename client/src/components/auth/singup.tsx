@@ -3,7 +3,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuthStore } from '../../services/authState';
+// import { useAuthStore } from '../../services/authState';
 import { useSignup } from '../../context/SignupContext';
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -100,7 +100,7 @@ export default function Signup() {
               placeholder="Choose a username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
+              className="w-full p-3 bg-white rounded-lg border border-gray-700 text-black placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               required
             />
           </div>
@@ -116,7 +116,7 @@ export default function Signup() {
               placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
+              className="w-full p-3 bg-white rounded-lg border border-gray-700 text-black placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               required
             />
           </div>
@@ -132,7 +132,7 @@ export default function Signup() {
               placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
+              className="w-full p-3 bg-white rounded-lg border border-gray-700 text-black placeholder-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               required
             />
           </div>
@@ -164,12 +164,11 @@ export default function Signup() {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <div className="w-full">
+          <div className="flex justify-center w-full">
+            <div className="">
               <GoogleLogin 
                 onSuccess={handleGoogleSuccess} 
                 onError={() => setMessage("Google login failed")}
-                theme="filled_black"
                 size="large"
                 width="100%"
               />
