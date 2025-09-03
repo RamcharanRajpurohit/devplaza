@@ -10,6 +10,7 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const { fullName, bio, location, links, skills, experience } = req.body;
     if (!req.user || !req.user._id) {
+      console.log('🚫 Unauthorized: No user info in request');
       return res.status(401).json({ success: false, message: 'Unauthorized: User not found in request' });
     }
     const userId = req.user._id;

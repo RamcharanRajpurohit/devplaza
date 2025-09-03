@@ -121,6 +121,7 @@ export default function DevPlazaOTP() {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(signupData?.email));
           setVerificationSuccess(true);
+          console.log("token recived",data.token)
 
           // show a short loader/transition to avoid abrupt flash of other routes/components
           // navigate after a short delay while keeping this component mounted so redirect checks

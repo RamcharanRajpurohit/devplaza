@@ -21,11 +21,6 @@ import ShowUser from './components/user/showUser';
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  
-  // Debug log to see what's actually loaded
-  console.log('Environment variables:', import.meta.env);
-  console.log('Google Client ID:', googleClientId);
-  
   if (!googleClientId) {
     console.error('Google Client ID not found in environment variables');
     console.error('Make sure VITE_GOOGLE_CLIENT_ID is set in your .env file');

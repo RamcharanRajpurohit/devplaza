@@ -59,6 +59,7 @@ export const verifyOtp = async (req: VerifyOTPRequest, res: Response): Promise<R
       secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
+    console.log("✅ OTP verified and tokens generated token :",accessToken);
 
     return res.status(200).json({
       success: true,

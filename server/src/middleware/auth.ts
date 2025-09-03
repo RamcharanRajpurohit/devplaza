@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export const verifyAccessToken = async (
+export const authenticateToken = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -22,23 +22,30 @@ export const verifyAccessToken = async (
   try {
     const authHeader = req.headers["authorization"];
     if (!authHeader?.startsWith("Bearer ")) {
+      console.log("🚫 No token provided in Authorization header");
       res.status(401).json({ message: "Unauthorized. No token provided." });
       return;
     }
 
     const token = authHeader.split(" ")[1];
+    console.log("🔑 Verifying token:", token);
+    if(!process.env.ACCESS_TOKEN_SECRET){
+      throw new Error("ACCESS_TOKEN_SECRET is not defined in environment variables");
+    }
     const decoded = jwt.verify(
       token,
-      process.env.ACCESS_SECRET_KEY as string
+      process.env.ACCESS_TOKEN_SECRET as string
     ) as AccessTokenPayload;
-
+    console.log("✅ Token verified. Decoded payload:", decoded);
     // Extra step: check if user still has valid refreshTokens in DB
-    const userTokens = await UserTokens.findOne({ user: decoded._id });
-    if (!userTokens || userTokens.refreshToken.length === 0) {
-      return res.status(403).json({ message: "Session expired. Please log in again." });
-    }
+    // const userTokens = await UserTokens.findOne({ user: decoded._id });
+    // if (!userTokens || userTokens.refreshToken.length === 0) {
+    //   return res.status(403).json({ message: "Session expired. Please log in again." });
+    // }
 
-    req.user = { _id: decoded._id };
+     req.user = { 
+      _id: decoded.userId
+    };
     next();
   } catch (err) {
     console.error("verifyAccessToken error:", err);
@@ -46,24 +53,4 @@ export const verifyAccessToken = async (
   }
 };
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
 
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  try {
-    const user = jwt.verify(token, process.env.JWT_SECRET || '');
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
-  }
-};
-  

@@ -114,7 +114,7 @@ const ProfileCompletion = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-
+       
       const response = await fetch('http://localhost:5000/api/userinfo', {
         method: 'POST',
         headers: {

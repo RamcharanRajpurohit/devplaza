@@ -36,6 +36,7 @@ interface DsaTopic {
   total: number;
 }
 
+
 const CodingProfileDashboard: React.FC = () => {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);

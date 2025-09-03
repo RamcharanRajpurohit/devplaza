@@ -1,6 +1,6 @@
 import express from "express";
 import { signup, login,refreshToken, logout } from "../controllers/authController";
-import { verifyAccessToken} from "../middleware/auth";
+import { authenticateToken} from "../middleware/auth";
 import { Response } from "express";
 
 import { verifyOtp } from '../controllers/otpController';
@@ -12,7 +12,7 @@ router.post("/signup", signup);
 router.post("/google", googleAuth);
 router.post("/login", login);
 router.post('/verify-otp', verifyOtp);
-router.post("/refresh-token",verifyAccessToken,refreshToken);
-router.post("/resend-otp",verifyAccessToken,resendOtp )
-router.post("/logout",verifyAccessToken, logout);
+router.post("/refresh-token",authenticateToken,refreshToken);
+router.post("/resend-otp",authenticateToken,resendOtp )
+router.post("/logout",authenticateToken, logout);
 export default router;

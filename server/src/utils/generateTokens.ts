@@ -18,7 +18,7 @@ if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
 type TokenGenerator = (payload: object) => string;// can define type of const var as well but then you dont need inline defination
 
 export const generateAccessToken = (payload: object) => {//payload is var name of passed obj and its type is object for ts 
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET as string, { expiresIn: "30m" });
 };
 export const generateRefreshToken =(payload:object)=>{
   return jwt.sign(payload,REFRESH_TOKEN_SECRET as string,{expiresIn:"7d"})
