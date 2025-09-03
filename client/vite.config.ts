@@ -7,7 +7,7 @@ export default defineConfig({
     tailwindcss(),react(), mkcert()
   ],
   server: {
-    https: true,
+    https: {},
     port: 5173,
   },
 })
