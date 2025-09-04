@@ -175,7 +175,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       try {
         const decoded = jwt.verify(
           oldRefreshToken,
-          process.env.REFRESH_SECRET_SECRET as string
+          process.env.REFRESH_TOKEN_SECRET as string
         ) as RefreshTokenPayload;
 
         // wipe all refresh tokens for this hacked user
@@ -199,7 +199,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     try {
       decoded = jwt.verify(
         oldRefreshToken,
-        process.env.REFRESH_SECRET_SECRET as string
+        process.env.REFRESH_TOKEN_SECRET as string
       ) as RefreshTokenPayload;
     } catch (err) {
       await UserTokens.updateOne(
@@ -220,13 +220,13 @@ export const refreshToken = async (req: Request, res: Response) => {
     // Generate new tokens
     const accessToken = jwt.sign(
       { _id: foundTokenDoc.user._id.toString() } as AccessTokenPayload,
-      process.env.ACCESS_SECRET_SECRET as string,
+      process.env.ACCESS_TOKEN_SECRET as string,
       { expiresIn: "15m" }
     );
 
     const newRefreshToken = jwt.sign(
       { _id: foundTokenDoc.user._id.toString() } as RefreshTokenPayload,
-      process.env.REFRESH_SECRET_SECRET as string,
+      process.env.REFRESH_TOKEN_SECRET as string,
       { expiresIn: "1d" }
     );
 
