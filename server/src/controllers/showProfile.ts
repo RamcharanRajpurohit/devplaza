@@ -5,6 +5,8 @@ import { fetchGFGUserData } from "../services/gfg";
 import { Request, Response } from "express";
 import { fetchCodechefProfile } from "../services/codechef";
 import { fetchCode360Profile } from "../services/code360";
+import { User } from "../models/user";
+import { UserInfo } from "../models/userInfo";
 
 interface ProfileParams {
   username: string;
@@ -119,16 +121,47 @@ const generateAwards = (data: any) => {
 
 export const showProfile = async (req: Request<ProfileParams>, res: Response) => {
   try {
-    const { username } = req.params;
+     const { username } = req.params;
+    console.log("📡 Fetching profile for:", username);
 
-    const [github, leetcode, codeforces, gfg, codechef, code360] = await Promise.all([
-      fetchGithubProfile("RamcharanRajpurohit"),
-      fetchLeetcodeProfile("b23ci1032"),
-      fetchCodeforcesProfile("Ramcharanrajpurohit"),
-      fetchGFGUserData("b23cimavf"),
-      fetchCodechefProfile("b23ci1032"),
-      fetchCode360Profile(),
-    ]);
+    // 🔥 Find base user
+    const userData = await User.findOne({ username });
+    console.log("✅ User data:", userData);
+
+    // 🔥 Find userInfo by reference
+    const userInfoData = await UserInfo.findOne({ user: userData?._id });
+    console.log("✅ UserInfo data:", userInfoData);
+
+    if (!userData || !userInfoData) {
+      console.warn("⚠️ User not found:", username);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // 🚨 Ensure links exist
+    if (
+      !userInfoData?.links?.code360 ||
+      !userInfoData?.links?.github ||
+      !userInfoData?.links?.leetcode ||
+      !userInfoData?.links?.codeforces ||
+      !userInfoData?.links?.gfg ||
+      !userInfoData?.links?.codechef
+    ) {
+      console.warn("⚠️ Incomplete profile links for:", username);
+      return res
+        .status(400)
+        .json({ error: "Please complete your profile links first." });
+    }
+
+    // 🔥 Fetch all profiles in parallel
+    const [github, leetcode, codeforces, gfg, codechef, code360] =
+      await Promise.all([
+        fetchGithubProfile(userInfoData.links.github),
+        fetchLeetcodeProfile(userInfoData.links.leetcode),
+        fetchCodeforcesProfile(userInfoData.links.codeforces),
+        fetchGFGUserData(userInfoData.links.gfg),
+        fetchCodechefProfile(userInfoData.links.codechef),
+        fetchCode360Profile(userInfoData.links.code360),
+      ]);
 
     console.log(gfg, codechef, code360, github, leetcode, codeforces);
 

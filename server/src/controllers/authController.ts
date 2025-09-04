@@ -160,6 +160,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const oldRefreshToken = cookies.jwt;
     res.clearCookie("jwt", { httpOnly: true });
     console.log("🔄 Refresh token received:", oldRefreshToken);
+    
     // Add this right after getting the oldRefreshToken
     try {
       const debugDecoded = jwt.decode(oldRefreshToken);
@@ -168,8 +169,13 @@ export const refreshToken = async (req: Request, res: Response) => {
       console.log("🐛 Debug - Could not decode token");
     }
 
-    const foundTokenDoc = await UserTokens.findOne({ refreshToken: oldRefreshToken }).populate("user");
+    // FIX: Use $in to search within the refreshToken array
+    const foundTokenDoc = await UserTokens.findOne({ 
+      refreshToken: { $in: [oldRefreshToken] } 
+    }).populate("user");
+    
     console.log("Found token document:", foundTokenDoc);
+    
     if (!foundTokenDoc) {
       // possible token reuse detection
       try {
@@ -239,6 +245,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
+    
     const user = await User.findById(foundTokenDoc.user._id).lean();
     res.status(200).json({ accessToken, email: user?.email });
   } catch (err) {
@@ -246,7 +253,6 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 
 
 

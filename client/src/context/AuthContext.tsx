@@ -14,6 +14,8 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: UserData) => void;
   setEmail: (email: string) => void;
+  refreshToken: () => Promise<void>;
+  isLoading: boolean; // Add loading state
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,80 +23,104 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Add loading state
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // Prevent multiple refresh calls
+
   const refreshToken = async () => {
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
-      method: "POST",
-      credentials: "include", // ✅ include cookies
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to refresh token");
+    // Prevent multiple simultaneous refresh attempts
+    if (isRefreshing) {
+      return;
     }
 
-    const data = await response.json();
+    setIsRefreshing(true);
+    
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
+        method: "POST",
+        credentials: "include", // ✅ include cookies
+      });
 
-    if (data.accessToken && data.email) {
-      // Store new token + user
-      localStorage.setItem("token", data.accessToken);
-      const userData = { email: data.email }; // you can add id, username later
-      localStorage.setItem("user", JSON.stringify(userData));
+      if (!response.ok) {
+        throw new Error(`Failed to refresh token: ${response.status}`);
+      }
 
-      setUser(userData);
-      setIsAuthenticated(true);
+      const data = await response.json();
 
-      console.log("✅ Token refreshed, user restored:", userData);
-    } else {
-      throw new Error("Invalid refresh response");
+      if (data.accessToken && data.email) {
+        // Store new token + user
+        localStorage.setItem("token", data.accessToken);
+        const userData = { email: data.email }; // you can add id, username later
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        setUser(userData);
+        setIsAuthenticated(true);
+
+        console.log("✅ Token refreshed, user restored:", userData);
+      } else {
+        throw new Error("Invalid refresh response");
+      }
+    } catch (err) {
+      console.error("❌ Refresh token failed:", err);
+      // Clear any existing auth data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsRefreshing(false);
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("❌ Refresh token failed:", err);
-    logout();
-  }
-};
+  };
 
   useEffect(() => {
     // Check for stored token and user data on mount
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser && typeof parsedUser === 'object') {
-          setUser(parsedUser);
-          setIsAuthenticated(true);
-          console.log('✅ Restored auth state from localStorage');
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser && typeof parsedUser === 'object') {
+            setUser(parsedUser);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            console.log('✅ Restored auth state from localStorage');
+            return;
+          }
+        } catch (error) {
+          console.error('❌ Error parsing stored user data:', error);
+          // Clear invalid data
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
         }
-      } catch (error) {
-        console.error('❌ Error parsing stored user data:', error);
-        // Clear invalid data
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
       }
-    }
-    else {
-      // Attempt to refresh token if no valid token found
-      refreshToken();
-    }
-  }, []);
+      
+      // Only attempt refresh if no valid stored data
+      console.log('🔄 No valid stored auth, attempting token refresh...');
+      await refreshToken();
+    };
+
+    initializeAuth();
+  }, []); // Remove dependencies to prevent re-runs
 
   useEffect(() => {
     console.log('Auth State Changed:', {
       isAuthenticated,
-      token: localStorage.getItem('token')
+      token: localStorage.getItem('token'),
+      isLoading
     });
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, isLoading]);
   
   useEffect(() => {
-  if (!isAuthenticated) return;
+    if (!isAuthenticated || isLoading) return;
 
-  const interval = setInterval(() => {
-    refreshToken();
-  }, 14 * 60 * 1000);
+    const interval = setInterval(() => {
+      refreshToken();
+    }, 14 * 60 * 1000);
 
-  return () => clearInterval(interval);
-}, [isAuthenticated]);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isLoading]); // Add isLoading dependency
 
   const login = (token: string, userData: UserData) => {
     try {
@@ -102,11 +128,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       setIsAuthenticated(true);
+      setIsLoading(false);
       console.log('✅ User logged in successfully');
     } catch (error) {
       console.error('❌ Error storing auth data:', error);
     }
   };
+
   const setEmail = (email: string) => {
     if (user) {
       const updatedUser = { ...user, email };
@@ -115,11 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ User email updated');
     }
   };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
+    setIsLoading(false);
     console.log('✅ User logged out');
   };
 
@@ -134,7 +164,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser,setEmail}}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      login, 
+      logout, 
+      updateUser,
+      setEmail,
+      refreshToken,
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

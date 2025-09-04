@@ -23,6 +23,7 @@ const PublicProfile: React.FC = () => {
     const fetchPublicProfile = async () => {
       if (!username) {
         setError('Username is missing');
+        console.log('❌ Username parameter is missing in URL');
         setLoading(false);
         return;
       }

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const fetchCode360Profile = async () => {
-  const uuid = "bd052004-30df-4096-bf8e-6d348363eceb";
+export const fetchCode360Profile = async (uuid :string) => {
+
 
   try {
     const res = await axios.get(

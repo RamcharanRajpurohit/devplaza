@@ -25,6 +25,9 @@ const userInfoSchema = new mongoose.Schema({
     leetcode: String,
     hackerrank: String,
     codechef: String,
+    code360: String,
+    codeforces: String,
+    gfg: String,
   },
   skills: [String],
   experience: {

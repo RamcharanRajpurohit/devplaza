@@ -125,6 +125,8 @@ export const authService = {
 export const profileService = {
   getProfile: () => 
     api.get('/profile'),
+
+  
   
   updateProfile: (profileData: any) => 
     api.put('/profile', profileData),
