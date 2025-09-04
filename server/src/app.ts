@@ -40,7 +40,7 @@ app.use(helmet());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/profile", profileRoutes);
+app.use("/api/profile", profileRoutes);
 app.use('/api/userinfo', userInfoRoutes);
 
 
@@ -55,7 +55,7 @@ app.listen(port, () => {
 });
 
 // Error handling
-app.use((err: any, req: express.Request, res: express.Response) => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error' });
 });

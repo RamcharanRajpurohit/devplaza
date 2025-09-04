@@ -137,7 +137,7 @@ export const profileService = {
     }),
   
   getPublicProfile: (username: string) => 
-    api.get(`/profile/public/${username}`),
+    api.get(`/profile/${username}`),
     
   recordProfileView: (username: string) =>
     api.post(`/profile/view/${username}`),

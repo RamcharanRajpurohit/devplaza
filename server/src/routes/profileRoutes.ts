@@ -3,6 +3,6 @@ import { showProfile } from "../controllers/showProfile";
 
 const router = express.Router();
 
-router.post("/user",showProfile);
+router.get("/:username",showProfile);
 
 export default router;
