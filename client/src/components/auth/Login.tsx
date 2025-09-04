@@ -11,25 +11,44 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🔄 Attempting login for:', email);
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  console.log('🔄 Attempting login for:', email);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      const response = await authService.login(email, password);
+  try {
+    const response = await authService.login(email, password);
+
+    // ✅ Login successful
+    if (response.data.accessToken) {
       console.log('✅ Login successful');
-      login(response.data.token, response.data.user);
+      login(response.data.accessToken, response.data.user);
       navigate('/dashboard');
-    } catch (err: any) {
-      console.error('❌ Login error:', err);
-      setError(err.response?.data?.message || 'An error occurred');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(response.data.message || 'Unexpected response');
     }
-  };
+  } catch (err: any) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    console.error('❌ Login error:', data);
+
+    if (status === 403 && data?.code === "USER_NOT_VERIFIED") {
+      useAuthStore.getState().setEmail(email);
+      // 🚀 Clean redirect with context
+      console.log('🚀 Redirecting to OTP verification for:', email);
+      navigate('/auth/otp');
+    } else {
+      setError(data?.message || 'An error occurred');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleForgotPassword = () => {
     console.log('🔄 Navigating to forgot password with email:', email);

@@ -1,27 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Mail, RefreshCw, CheckCircle } from 'lucide-react';
-import { useSignup } from '../../context/SignupContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../services/authState';
+import { useSignup } from '../../context/SignupContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function DevPlazaOTP() {
+   const { setSignupData } = useSignup();
   const { signupData, clearSignupData } = useSignup();
   const navigate = useNavigate();
+  const{ login }= useAuth();
 
   // move this state above the redirect effect
   const [verificationSuccess, setVerificationSuccess] = useState(false);
 
   // Redirect if no email in state, but only when NOT in the middle of successful verification
-  useEffect(() => {
-    const token = localStorage.getItem('token');
+  // useEffect(() => {
+  //   const token = localStorage.getItem('token');
 
-    // if there's a token we should not redirect to signup (prevents flash when signupData is cleared)
-    if (!signupData?.email && !verificationSuccess && !token) {
-      console.log('⚠️ No signup email in state and no token found, redirecting to signup');
-      navigate('/auth/signup', { replace: true });
-    } else if (!signupData?.email && token) {
-      console.log('ℹ️ signupData missing but token present — skipping redirect');
-    }
-  }, [signupData, navigate, verificationSuccess]);
+  //   // if there's a token we should not redirect to signup (prevents flash when signupData is cleared)
+  //   if (!signupData?.email && !verificationSuccess && !token) {
+  //     console.log('⚠️ No signup email in state and no token found, redirecting to signup');
+  //     navigate('/auth/signup', { replace: true });
+  //   } else if (!signupData?.email && token) {
+  //     console.log('ℹ️ signupData missing but token present — skipping redirect');
+  //   }
+  // }, [signupData, navigate, verificationSuccess]);
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isResending, setIsResending] = useState(false);
@@ -30,6 +34,7 @@ export default function DevPlazaOTP() {
   const [canResend, setCanResend] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const loginEmail= useAuthStore((state) => state.email);
 
   useEffect(() => {
     // Focus first input on mount
@@ -49,7 +54,7 @@ export default function DevPlazaOTP() {
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
+
     // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
 
@@ -89,7 +94,10 @@ export default function DevPlazaOTP() {
   };
 
   const handleSubmit = async () => {
-    console.log('🔄 Submitting OTP verification:', { email: signupData?.email });
+    setSignupData({ 
+      email: loginEmail,
+    });
+    console.log('🔄 Submitting OTP verification:', { email: signupData?.email  });
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
       setError('Please enter a valid 6-digit OTP.');
@@ -102,18 +110,18 @@ export default function DevPlazaOTP() {
     try {
       const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          otp: otpCode, 
-          email: signupData?.email 
+        body: JSON.stringify({
+          otp: otpCode,
+          email: signupData?.email
         }),
         credentials: 'include' // Add this to handle cookies if needed
       });
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         console.log('✅ OTP verification successful');
         if (data.token) {
@@ -121,7 +129,9 @@ export default function DevPlazaOTP() {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(signupData?.email));
           setVerificationSuccess(true);
-          console.log("token recived",data.token)
+          console.log("token recived", data.token)
+          login(data.token, data.email);
+          
 
           // show a short loader/transition to avoid abrupt flash of other routes/components
           // navigate after a short delay while keeping this component mounted so redirect checks
@@ -141,10 +151,10 @@ export default function DevPlazaOTP() {
                 }
               }, 50);
             }
-  }, 900); // ~900ms transition to show success + loader
-} else {
-  throw new Error('No token received from server');
-}
+          }, 900); // ~900ms transition to show success + loader
+        } else {
+          throw new Error('No token received from server');
+        }
       } else {
         console.warn('⚠️ OTP verification failed:', data.message);
         setError(data.message || 'Invalid OTP. Please try again.');
@@ -172,7 +182,7 @@ export default function DevPlazaOTP() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         setError(data.message || 'Failed to resend OTP.');
       }
@@ -292,8 +302,8 @@ export default function DevPlazaOTP() {
           {isVerifying ? (
             <>
               <svg className="animate-spin h-5 w-5 text-red-200" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z" />
               </svg>
               <span>Verifying...</span>
             </>
@@ -306,7 +316,7 @@ export default function DevPlazaOTP() {
         <div className="text-center mt-6">
           <p className="text-sm text-gray-400">
             Didn't receive the code?{' '}
-            <button 
+            <button
               onClick={() => setError('Please check your spam folder or try resending the code.')}
               className="text-red-400 hover:text-red-300 underline font-medium transition-colors"
             >

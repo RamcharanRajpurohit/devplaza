@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateAccessToken,generateAccessAndRefreshToken,generateRefreshToken } from "../utils/generateTokens";
+import { generateAccessToken, generateAccessAndRefreshToken, generateRefreshToken } from "../utils/generateTokens";
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
@@ -40,8 +40,8 @@ export const signup = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(201).json({ 
-      message: "User created. OTP sent for verification." 
+    res.status(201).json({
+      message: "User created. OTP sent for verification."
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -50,7 +50,7 @@ export const signup = async (req: Request, res: Response) => {
 };
 
 // Login
-export const login = async (req: Request, res: Response) => {
+ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -76,16 +76,18 @@ export const login = async (req: Request, res: Response) => {
           message: "Failed to generate OTP. Try again later.",
         });
       }
-      return res.status(403).json({ 
+      return res.status(403).json({
         success: false,
-        message: "User not verified. OTP resent to your email." 
+        code: "USER_NOT_VERIFIED",
+        message: "User not verified. OTP resent to your email."
       });
+
     }
 
     // Generate tokens (only if verified)
     const { accessToken, refreshToken } = generateAccessAndRefreshToken(
-      { userId: user._id, email: user.email },
-      { userId: user._id, email: user.email }
+      { _id: user._id, email: user.email },
+      { _id: user._id, email: user.email }
     );
 
     // Save refresh token in UserTokens collection
@@ -104,14 +106,13 @@ export const login = async (req: Request, res: Response) => {
       secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-
+    console.log("Login successful, refresh token generated:", refreshToken);
     res.json({ message: "Login successful", accessToken });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 
 
 
@@ -151,15 +152,24 @@ interface RefreshTokenPayload {
 }
 
 export const refreshToken = async (req: Request, res: Response) => {
+  console.log("incoming cookies:", req.cookies);
   try {
     const cookies = req.cookies;
     if (!cookies?.jwt) return res.sendStatus(401);
 
     const oldRefreshToken = cookies.jwt;
     res.clearCookie("jwt", { httpOnly: true });
+    console.log("🔄 Refresh token received:", oldRefreshToken);
+    // Add this right after getting the oldRefreshToken
+    try {
+      const debugDecoded = jwt.decode(oldRefreshToken);
+      console.log("🐛 Debug - Token payload:", debugDecoded);
+    } catch (e) {
+      console.log("🐛 Debug - Could not decode token");
+    }
 
     const foundTokenDoc = await UserTokens.findOne({ refreshToken: oldRefreshToken }).populate("user");
-
+    console.log("Found token document:", foundTokenDoc);
     if (!foundTokenDoc) {
       // possible token reuse detection
       try {
@@ -229,8 +239,8 @@ export const refreshToken = async (req: Request, res: Response) => {
       secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-
-    res.status(200).json({ accessToken });
+    const user = await User.findById(foundTokenDoc.user._id).lean();
+    res.status(200).json({ accessToken, email: user?.email });
   } catch (err) {
     console.error("Refresh token error:", err);
     res.status(500).json({ message: "Something went wrong" });
@@ -281,8 +291,8 @@ export const googleAuth = async (req: Request, res: Response) => {
 
     // generate tokens
     const { accessToken, refreshToken } = generateAccessAndRefreshToken(
-      { userId: user._id, email: user.email },
-      { userId: user._id, email: user.email }
+      { _id: user._id, email: user.email },
+      { _id: user._id, email: user.email }
     );
 
     // save refresh token

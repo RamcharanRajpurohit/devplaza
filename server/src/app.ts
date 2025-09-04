@@ -10,7 +10,7 @@ const mongoose = require('mongoose'); // Use CommonJS require
 const cookieParser = require('cookie-parser');
 import helmet from 'helmet';
 import userinfo from './routes/userInfo';
-
+import { UserTokens } from './models/userTokens';
 const mongoURI = process.env.MONGO_URI as string;
 mongoose.connect(mongoURI)
   .then(() => {
@@ -19,7 +19,11 @@ mongoose.connect(mongoURI)
   .catch((err: any) => {
     console.error('🔴 MongoDB connection error:', err);
   });
-  
+// async function testDBConnection() {
+//   await UserTokens.deleteMany({});
+// }
+// testDBConnection();
+
 const app = express();
 const port = process.env.PORT || 3000;
 

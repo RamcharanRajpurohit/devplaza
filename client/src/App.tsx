@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Singup from './components/auth/singup';
 import DevPlazaForgotPassword from './components/auth/forgot';
 import AuthPage from './components/auth/Login';
-import CodingProfileDashboard from './components/dashboard/profile';
+import CodingProfileDashboard from './components/user/showUser';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicProfile from './components/profile/PublicProfile';
 import Settings from './components/dashboard/Settings';
@@ -46,7 +46,7 @@ function App() {
                 <Route path="/auth/login" element={<AuthPage />} />
                 <Route path="/auth/signup" element={<Singup/>} />
                 <Route path="/forgot-password" element={<DevPlazaForgotPassword />} />
-                <Route path ="auth/otp" element={<DevPlazaOTP />}/>
+                <Route path ="/auth/otp" element={<DevPlazaOTP />}/>
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
                   <ProtectedRoute>

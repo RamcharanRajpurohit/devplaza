@@ -12,7 +12,7 @@ router.post("/signup", signup);
 router.post("/google", googleAuth);
 router.post("/login", login);
 router.post('/verify-otp', verifyOtp);
-router.post("/refresh-token",authenticateToken,refreshToken);
-router.post("/resend-otp",authenticateToken,resendOtp )
+router.post("/refresh-token",refreshToken);
+router.post("/resend-otp",resendOtp )
 router.post("/logout",authenticateToken, logout);
 export default router;

@@ -33,11 +33,11 @@ export const verifyOtp = async (req: VerifyOTPRequest, res: Response): Promise<R
 
     // Delete used OTPs
     await OTP.deleteMany({ email });
-
+    
     // Generate tokens
     const { accessToken, refreshToken } = generateAccessAndRefreshToken(
-      { userId: checkUserPresent._id, email: checkUserPresent.email },
-      { userId: checkUserPresent._id, email: checkUserPresent.email }
+      {_id: checkUserPresent._id, email: checkUserPresent.email },
+      {_id: checkUserPresent._id, email: checkUserPresent.email }
     );
 
     // Save refresh token in UserTokens collection instead of User
@@ -81,13 +81,17 @@ export const verifyOtp = async (req: VerifyOTPRequest, res: Response): Promise<R
 export const resendOtp = async (req: Request, res: Response) => {
   try {
     // Extract user info from verified token (middleware should decode JWT)
-    const userId = (req as any).user?.userId;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized. Invalid token." });
-    }
+    // const_id = (req as any).user?.userId;
+    // if (!userId) {
+    //   return res.status(401).json({ message: "Unauthorized. Invalid token." });
+    // }
 
     // Find the user
-    const user = await User.findById(userId);
+    const _id = req.body.userId;
+    if (! _id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+    const user = await User.findById(_id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

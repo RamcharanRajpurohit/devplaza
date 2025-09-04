@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (token: string, userData: UserData) => void;
   logout: () => void;
   updateUser: (userData: UserData) => void;
+  setEmail: (email: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,6 +21,37 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const refreshToken = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
+      method: "POST",
+      credentials: "include", // ✅ include cookies
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to refresh token");
+    }
+
+    const data = await response.json();
+
+    if (data.accessToken && data.email) {
+      // Store new token + user
+      localStorage.setItem("token", data.accessToken);
+      const userData = { email: data.email }; // you can add id, username later
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      console.log("✅ Token refreshed, user restored:", userData);
+    } else {
+      throw new Error("Invalid refresh response");
+    }
+  } catch (err) {
+    console.error("❌ Refresh token failed:", err);
+    logout();
+  }
+};
 
   useEffect(() => {
     // Check for stored token and user data on mount
@@ -41,6 +73,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('token');
       }
     }
+    else {
+      // Attempt to refresh token if no valid token found
+      refreshToken();
+    }
   }, []);
 
   useEffect(() => {
@@ -49,6 +85,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       token: localStorage.getItem('token')
     });
   }, [isAuthenticated, user]);
+  
+  useEffect(() => {
+  if (!isAuthenticated) return;
+
+  const interval = setInterval(() => {
+    refreshToken();
+  }, 14 * 60 * 1000);
+
+  return () => clearInterval(interval);
+}, [isAuthenticated]);
 
   const login = (token: string, userData: UserData) => {
     try {
@@ -61,7 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ Error storing auth data:', error);
     }
   };
-
+  const setEmail = (email: string) => {
+    if (user) {
+      const updatedUser = { ...user, email };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      console.log('✅ User email updated');
+    }
+  };
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -81,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser,setEmail}}>
       {children}
     </AuthContext.Provider>
   );
