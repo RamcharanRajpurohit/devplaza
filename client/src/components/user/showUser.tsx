@@ -126,20 +126,37 @@ interface ActivityHeatmapProps {
 }
 
 const CodingProfileDashboard = () => {
+  //who it will get username from url
   const { username } = useParams<{ username: string }>();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  console.log("dashboard rendered");
+  
+  // check username is defined or not
+  if (!username) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-red-400">Username not provided</div>
+      </div>
+    );
+  }
+  
+  
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        
         setLoading(true);
         const response = await fetch(`http://localhost:5000/api/profile/${username}`);
+        console.log("Data ", response);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
         }
         const data = await response.json();
+        console.log(data);
+        
         setProfileData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -147,10 +164,12 @@ const CodingProfileDashboard = () => {
         setLoading(false);
       }
     };
-
+    
     if (username) {
+      console.log("Fetching profile for ", username);
       fetchProfile();
     }
+    // Re-run when username changes
   }, [username]);
 
   // Fix activity data generation

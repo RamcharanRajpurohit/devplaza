@@ -4,6 +4,10 @@ import { UserInfo } from '../models/userInfo';
 
 const router = express.Router();
 
+//
+
+
+
 // Create or Update user info
 router.post('/', authenticateToken, async (req, res) => {
   console.log('📝 Creating/Updating user info:', req.body);

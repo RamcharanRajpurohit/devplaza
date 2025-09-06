@@ -28,6 +28,7 @@ interface ValidationErrors {
 const ProfileCompletion = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [Galobal_Error,SetGlobal_Error]=useState<string | null>("HELLO WORLD")
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -80,7 +81,7 @@ const ProfileCompletion = () => {
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
-    
+
     if (!formData.fullName.trim()) {
       newErrors.name = 'Name is required';
     }
@@ -91,16 +92,32 @@ const ProfileCompletion = () => {
       newErrors.bio = 'Bio should be at least 50 characters';
     }
 
-    const urlPattern = /^https?:\/\/.+/;
-    if (formData.links.github && !urlPattern.test(formData.links.github)) {
-      newErrors.githubProfile = 'Please enter a valid URL';
-    }
+    Object.entries(formData.links).forEach(([key, value]) => {
+      if (value && !value.trim()) {
+        newErrors[key] = 'URL is required';
+      }
+      SetGlobal_Error(`All link must be filled with valid URL`);
+    });
+    
+
+    // Only allow URLs starting with "https://", no "www", no parentheses
+    const urlPattern = /^https:\/\/[^\s()]+$/;
+    Object.entries(formData.links).forEach(([key, value]) => {
+      if (!value.trim()) {
+        newErrors[key] = 'URL is required';
+      } else if (!urlPattern.test(value)) {
+        newErrors[key] = 'Please enter a valid URL starting with https:// and without www or parentheses';
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Remove check for value of form it not required every time user enter https://
+   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("🚀 Form submission initiated");
+    
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -140,8 +157,9 @@ const ProfileCompletion = () => {
 
       const data = await response.json();
       console.log('✅ Profile completion successful:', data);
-
-      navigate('/dashboard', { replace: true });
+      console.log(data);
+      
+      // navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('❌ Profile completion error:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -152,7 +170,23 @@ const ProfileCompletion = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Check if the input name is one of the links
+    if (['github', 'leetcode', 'codechef', 'codeforces', 'gfg'].includes(name)) {
+      setFormData(prev => ({
+      ...prev,
+      links: {
+        ...prev.links,
+        [name]: value
+      }
+      }));
+    } else {
+      setFormData(prev => ({
+      ...prev,
+      [name]: value
+      }));
+    }
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -245,7 +279,16 @@ const ProfileCompletion = () => {
               ))}
             </div>
           </div>
-
+              <div className='w-full flex justify-center items-center'>
+                {
+                  Galobal_Error && typeof Galobal_Error === "string" && (
+                    <p className="mt-1 text-sm text-red-500">
+                      <b>Alert : </b>
+                      {Galobal_Error}
+                      </p>
+                  )
+                }
+              </div>
           <button
             type="submit"
             disabled={isLoading}
