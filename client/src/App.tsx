@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Singup from './components/auth/singup';
 import DevPlazaForgotPassword from './components/auth/forgot';
 import AuthPage from './components/auth/Login';
-import CodingProfileDashboard from './components/user/showUser';
+import CodingProfileDashboard from './components/dashboard/profile';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicProfile from './components/profile/PublicProfile';
 import Settings from './components/dashboard/Settings';

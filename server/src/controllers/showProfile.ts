@@ -388,7 +388,7 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
         }
       }
     };
-
+    console.log("🚀 Enhanced Profile Data to frontend:", enhancedProfile);
     return res.json(enhancedProfile);
 
   } catch (error) {

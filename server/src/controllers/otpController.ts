@@ -65,6 +65,11 @@ export const verifyOtp = async (req: VerifyOTPRequest, res: Response): Promise<R
       success: true,
       message: "OTP verification successful",
       token: accessToken,
+      user:{
+        id: checkUserPresent._id,
+        email: checkUserPresent.email,
+        username: checkUserPresent.username,
+      }
     });
   } catch (error: any) {
     console.error(error.message);

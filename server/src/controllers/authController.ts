@@ -50,7 +50,7 @@ export const signup = async (req: Request, res: Response) => {
 };
 
 // Login
- export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -107,7 +107,16 @@ export const signup = async (req: Request, res: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
     console.log("Login successful, refresh token generated:", refreshToken);
-    res.json({ message: "Login successful", accessToken });
+    res.json({
+      message: "Login successful",
+      accessToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      }
+    });
+
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Something went wrong" });
@@ -160,7 +169,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const oldRefreshToken = cookies.jwt;
     res.clearCookie("jwt", { httpOnly: true });
     console.log("🔄 Refresh token received:", oldRefreshToken);
-    
+
     // Add this right after getting the oldRefreshToken
     try {
       const debugDecoded = jwt.decode(oldRefreshToken);
@@ -170,12 +179,12 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     // FIX: Use $in to search within the refreshToken array
-    const foundTokenDoc = await UserTokens.findOne({ 
-      refreshToken: { $in: [oldRefreshToken] } 
+    const foundTokenDoc = await UserTokens.findOne({
+      refreshToken: { $in: [oldRefreshToken] }
     }).populate("user");
-    
+
     console.log("Found token document:", foundTokenDoc);
-    
+
     if (!foundTokenDoc) {
       // possible token reuse detection
       try {
@@ -245,7 +254,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-    
+
     const user = await User.findById(foundTokenDoc.user._id).lean();
     res.status(200).json({ accessToken, email: user?.email });
   } catch (err) {

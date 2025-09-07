@@ -130,7 +130,7 @@ export default function DevPlazaOTP() {
           localStorage.setItem('user', JSON.stringify(signupData?.email));
           setVerificationSuccess(true);
           console.log("token recived", data.token)
-          login(data.token, data.email);
+          login(data.token, data.user);
           
 
           // show a short loader/transition to avoid abrupt flash of other routes/components

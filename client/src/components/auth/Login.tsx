@@ -26,6 +26,7 @@ const Login: React.FC = () => {
     if (response.data.accessToken) {
       console.log('✅ Login successful');
       login(response.data.accessToken, response.data.user);
+      console.log(response.data.user);
       navigate('/dashboard');
     } else {
       setError(response.data.message || 'Unexpected response');
