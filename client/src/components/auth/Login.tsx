@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
+import axios from "axios";
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
 import { useAuthStore } from '../../services/authState';
+
+const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -50,6 +55,19 @@ const Login: React.FC = () => {
   }
 };
 
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    console.log('🔄 Processing Google login');
+    try {
+      const res = await axios.post(`${API}/api/auth/google`, { id_token: credentialResponse.credential }, { withCredentials: true });
+      login(res.data.accessToken, res.data.user);
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+      
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Google login failed");
+    }
+  };
 
   const handleForgotPassword = () => {
     console.log('🔄 Navigating to forgot password with email:', email);
@@ -121,16 +139,36 @@ const Login: React.FC = () => {
           </button>
 
           <div className="mt-4 text-center">
-            <button 
-              onClick={handleForgotPassword}
+            <Link
+              to="/forgot-password"
               className="text-sm text-red-400 hover:cursor-pointer hover:text-red-300 transition-colors duration-200"
             >
               Forgot your password?
-            </button>
+            </Link>
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-gradient-to-br from-gray-900 via-red-950 to-black text-gray-400 font-medium">OR</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center w-full">
+            <div className="">
+              <GoogleLogin 
+                onSuccess={handleGoogleSuccess} 
+                onError={() => setError("Google login failed")}
+                size="large"
+                width="100%"
+              />
+            </div>
           </div>
 
           <div className="mt-6 text-center">
-            <span className="text-sm text-gray-400">Don't have an account?</span>
+            <span className="text-sm text-gray-400">Don't have an account? </span>
             <Link to="/auth/signup" className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors duration-200">
               Sign up
             </Link>

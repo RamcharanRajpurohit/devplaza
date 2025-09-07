@@ -141,7 +141,7 @@ const CodingProfileDashboard: React.FC = () => {
   };
 
   const handleShareProfile = async () => {
-    const profileUrl = `${window.location.origin}/profile/${profileData?.profile?.username}`;
+    const profileUrl = `${window.location.origin}/profile/${user?.username}`;
     try {
       if (navigator.share) {
         await navigator.share({
@@ -226,7 +226,7 @@ const CodingProfileDashboard: React.FC = () => {
                 <span>Share Profile</span>
               </button>
               <button
-                onClick={() => navigate('/profile/edit')}
+                onClick={() => navigate('/complete-profile')}
                 className="bg-gradient-to-r from-green-600 to-green-500 px-4 py-2 rounded-lg flex items-center space-x-2 hover:from-green-500 hover:to-green-400 transition-all duration-300"
               >
                 <Edit3 className="w-4 h-4" />
@@ -462,7 +462,7 @@ const Sidebar: React.FC<{
         {/* Action Buttons */}
         <div className="p-6 space-y-3">
           <button
-            onClick={() => navigate('/profile/edit')}
+            onClick={() => navigate('/complete-profile')}
             className="w-full flex items-center space-x-3 p-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg transition-all duration-300"
           >
             <Edit3 className="w-5 h-5" />

@@ -335,12 +335,58 @@ export const googleAuth = async (req: Request, res: Response) => {
       accessToken,
       user: {
         id: user._id,
-        name: user.username,
+        username: user.username,
         email: user.email
       },
     });
   } catch (err) {
     console.error("Google auth error:", err);
     return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email is required" 
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email }); // Use findOne instead of find
+    if (!user || !user.email) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found with this email address" 
+      });
+    }
+
+    // Generate OTP for password reset
+    
+    const otpGenerated = await generateAndSaveOTP(user.email); 
+    if (!otpGenerated) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate reset code. Please try again."
+      });
+    }
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Password reset code sent to your email successfully"
+    });
+
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later."
+    });
   }
 };

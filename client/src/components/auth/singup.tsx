@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 // import { useAuthStore } from '../../services/authState';
 import { useSignup } from '../../context/SignupContext';
+import { useAuth } from '../../context/AuthContext';
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -14,6 +15,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setSignupData } = useSignup();
+   const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -53,16 +55,14 @@ export default function Signup() {
     }
   };
 
+
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     console.log('🔄 Processing Google signup');
     try {
       const res = await axios.post(`${API}/api/auth/google`, { id_token: credentialResponse.credential }, { withCredentials: true });
-      setMessage(`Google login success. Welcome ${res.data.user.name}`);
-      
-      // If Google signup also requires OTP verification, redirect to OTP page
-      // Otherwise, you might want to redirect to dashboard or login
+      login(res.data.accessToken, res.data.user);
       setTimeout(() => {
-        navigate('/auth/otp'); // or navigate('/dashboard') if no OTP needed
+        navigate('/dashboard'); // or navigate('/dashboard') if no OTP needed
       }, 1500);
       
     } catch (err: any) {

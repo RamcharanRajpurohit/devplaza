@@ -1,11 +1,8 @@
 import express from "express";
-import { signup, login,refreshToken, logout } from "../controllers/authController";
+import { signup, login,refreshToken, logout,googleAuth ,forgotPassword} from "../controllers/authController";
 import { authenticateToken} from "../middleware/auth";
-import { Response } from "express";
 
-import { verifyOtp } from '../controllers/otpController';
-import { resendOtp } from "../controllers/otpController";
-import { googleAuth } from "../controllers/authController";
+import { verifyOtp,resendOtp} from '../controllers/otpController';
 const router = express.Router();
 
 router.post("/signup", signup);
@@ -14,5 +11,6 @@ router.post("/login", login);
 router.post('/verify-otp', verifyOtp);
 router.post("/refresh-token",refreshToken);
 router.post("/resend-otp",resendOtp )
+router.post("/forgot-password",forgotPassword )
 router.post("/logout",authenticateToken, logout);
 export default router;
