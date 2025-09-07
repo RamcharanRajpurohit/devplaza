@@ -13,8 +13,8 @@ import NotFound from './components/common/NotFound';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import DevPlazaOTP from './components/auth/otp';
 import { SignupProvider } from './context/SignupContext';
-import ProfileCompletion from './components/ProfileCompletion';
 import ShowUser from './components/user/showUser';
+import UserInfoForm from './components/auth/UserInfoForm';
 
 
 
@@ -58,7 +58,7 @@ function App() {
                     <Settings />
                   </ProtectedRoute>
                 } />
-                <Route path="/complete-profile" element={<ProfileCompletion />} />
+                <Route path="/complete-profile" element={<UserInfoForm/>} />
                 <Route 
                   path="/user/:username" 
                   element={

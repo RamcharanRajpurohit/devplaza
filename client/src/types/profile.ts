@@ -1,3 +1,4 @@
+// Updated ProfileData interface based on API response structure
 export interface ProfileData {
   username: string;
   fullName: string;
@@ -10,7 +11,7 @@ export interface ProfileData {
     maxRank: number;
     problems?: number;
   }[];
-  contestData: {
+  contestData?: {
     name: string;
     count: number;
   }[];
@@ -32,3 +33,14 @@ export interface ProfileData {
   };
 }
 
+// API response wrapper (what the API actually returns)
+export interface PublicProfileResponse {
+  profile: ProfileData;
+  overview?: any;
+  activityCalendar?: any;
+  problemsSolved?: any;
+  platforms?: any;
+}
+
+// Alternative: If the API returns flattened data sometimes
+export type ProfileApiResponse = ProfileData | PublicProfileResponse;
