@@ -148,6 +148,7 @@ const CodingProfileDashboard = () => {
       try {
         
         setLoading(true);
+        console.log(`🔍 Fetching public profile for username: ${username}`);
         const response = await fetch(`http://localhost:5000/api/profile/${username}`);
         console.log("Data ", response);
         
@@ -159,6 +160,7 @@ const CodingProfileDashboard = () => {
         
         setProfileData(data);
       } catch (err) {
+        console.error('❌ Error fetching profile:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
