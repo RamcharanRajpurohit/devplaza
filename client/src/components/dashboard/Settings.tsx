@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { 
   User, 
   Mail, 
@@ -9,32 +10,54 @@ import {
   EyeOff, 
   AlertCircle, 
   CheckCircle,
-  Shield
+  Shield,
+  RefreshCw
 } from 'lucide-react';
 
-const API = "http://localhost:5000"; // Replace with your API base URL
+const API = "http://localhost:5000"; // Your API base URL
 
 interface UserInfo {
+  _id?: string;
   fullName?: string;
   bio?: string;
   location?: string;
-  links?: string[];
+  links?: {
+    github?: string;
+    gfg?: string;
+    leetcode?: string;
+    codechef?: string;
+    code360?: string;
+    codeforces?: string;
+  };
   skills?: string[];
-  experience?: string;
+  experience?: {
+    years?: number;
+    currentRole?: string;
+    company?: string;
+  };
+  user?: {
+    _id: string;
+    username: string;
+    email: string;
+  };
 }
 
 interface User {
   _id: string;
   username: string;
   email: string;
+  emailVerified?: boolean;
 }
 
 const Settings: React.FC = () => {
-  // Mock user data - replace with your auth context
-  const [user] = useState<User>({ _id: '123', username: 'johnDoe', email: 'john@example.com' });
+  // Get updateUser from AuthContext
+  const { refreshToken, updateUser } = useAuth();
+  
+  // User state
+  const [user, setUser] = useState<User | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo>({});
   
   // Form states
-  const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [newUsername, setNewUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -43,6 +66,7 @@ const Settings: React.FC = () => {
   
   // UI states
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -51,29 +75,108 @@ const Settings: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useEffect(() => {
-    fetchUserInfo();
-    if (user) {
-      setNewUsername(user.username || '');
-      setNewEmail(user.email || '');
-    }
-  }, [user]);
+    fetchInitialData();
+  }, []);
 
-  const fetchUserInfo = async () => {
-    if (!user?._id) return;
-    
+  const fetchInitialData = async () => {
+    setInitialLoading(true);
     try {
-      const response = await fetch(`${API}/api/user-info/${user._id}`);
+      await Promise.all([fetchCurrentUser(), fetchUserInfo()]);
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+      setError('Failed to load user data');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}) => {
+    const makeRequest = async (headers: Record<string, string>) => {
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          ...headers
+        }
+      });
+    };
+
+    // First attempt with current token
+    let response = await makeRequest(getAuthHeaders());
+    
+    // If 401, try to refresh token and retry
+    if (response.status === 401) {
+      console.log('🔄 Token expired, attempting refresh...');
+      try {
+        await refreshToken();
+        // Retry with new token
+        response = await makeRequest(getAuthHeaders());
+      } catch (refreshError) {
+        console.error('❌ Token refresh failed:', refreshError);
+        window.location.href = '/auth/login';
+        throw refreshError;
+      }
+    }
+
+    return response;
+  };
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await makeAuthenticatedRequest(`${API}/api/auth/me`);
+      
       const data = await response.json();
       if (data.success) {
-        setUserInfo(data.data);
+        setUser(data.data);
+        setNewUsername(data.data.username || '');
+        setNewEmail(data.data.email || '');
+      } else {
+        // If still unauthorized after refresh attempt, redirect to login
+        if (response.status === 401) {
+          console.log('Unauthorized, redirecting to login');
+          window.location.href = '/auth/login';
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching current user:', err);
+    }
+  };
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await makeAuthenticatedRequest(`${API}/api/user-info`);
+      
+      const data = await response.json();
+      if (data.success) {
+        // Normalize skills to array
+        const normalizeSkillsToArray = (val: any) => {
+          if (Array.isArray(val)) return val;
+          if (typeof val === 'string') {
+            return val.split(',').map((s: string) => s.trim()).filter((s: string) => s);
+          }
+          return [];
+        };
+
+        setUserInfo({
+          ...data.data,
+          skills: normalizeSkillsToArray(data.data.skills),
+          // Keep links as object structure for individual platform handling
+          links: data.data.links || {}
+        });
       }
     } catch (err) {
       console.error('Error fetching user info:', err);
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('token');
+    console.log('Retrieved token for auth headers:', token);
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      window.location.href = '/auth/login';
+      return { 'Authorization': '', 'Content-Type': 'application/json' };
+    }
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -91,14 +194,14 @@ const Settings: React.FC = () => {
 
     try {
       console.log('🔄 Updating user profile');
-      const response = await fetch(`${API}/api/user-info`, {
+      const response = await makeAuthenticatedRequest(`${API}/api/user-info`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify(userInfo)
       });
 
       const data = await response.json();
       if (data.success) {
+        setUserInfo(data.data);
         setMessage('Profile updated successfully!');
         console.log('✅ Profile updated successfully');
       } else {
@@ -118,19 +221,29 @@ const Settings: React.FC = () => {
       return;
     }
 
+    if (newUsername.trim().length < 3) {
+      setError('Username must be at least 3 characters long');
+      return;
+    }
+
     setLoading(true);
     clearMessages();
 
     try {
       console.log('🔄 Updating username to:', newUsername);
-      const response = await fetch(`${API}/api/auth/update-username`, {
+      const response = await makeAuthenticatedRequest(`${API}/api/auth/update-username`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ username: newUsername })
+        body: JSON.stringify({ username: newUsername.trim() })
       });
 
       const data = await response.json();
       if (data.success) {
+        setUser(data.data);
+        // Update AuthContext with new username
+        updateUser({
+          ...data.data,
+          username: data.data.username,
+        });
         setMessage('Username updated successfully!');
         console.log('✅ Username updated successfully');
       } else {
@@ -161,14 +274,19 @@ const Settings: React.FC = () => {
 
     try {
       console.log('🔄 Updating email to:', newEmail);
-      const response = await fetch(`${API}/api/auth/update-email`, {
+      const response = await makeAuthenticatedRequest(`${API}/api/auth/update-email`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ email: newEmail })
+        body: JSON.stringify({ email: newEmail.trim() })
       });
 
       const data = await response.json();
       if (data.success) {
+        setUser(data.data);
+        // Update AuthContext with new email
+        updateUser({
+          ...data.data,
+          email: data.data.email,
+        });
         setMessage('Email updated successfully! Please verify your new email.');
         console.log('✅ Email updated successfully');
       } else {
@@ -182,19 +300,31 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleChangePassword = async () => {
+  const handleChangePassword = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    console.log('⚡ Password change initiated');
+    console.log('Current Password:', currentPassword ? '✓ Provided' : '✗ Empty');
+    console.log('New Password:', newPassword ? '✓ Provided' : '✗ Empty');
+    console.log('Confirm Password:', confirmPassword ? '✓ Provided' : '✗ Empty');
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('All password fields are required');
+      console.log('❌ Validation failed: Empty fields');
       return;
     }
 
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match');
+      console.log('❌ Validation failed: Passwords don\'t match');
       return;
     }
 
     if (newPassword.length < 6) {
       setError('New password must be at least 6 characters long');
+      console.log('❌ Validation failed: Password too short');
       return;
     }
 
@@ -202,17 +332,23 @@ const Settings: React.FC = () => {
     clearMessages();
 
     try {
-      console.log('🔄 Changing password');
-      const response = await fetch(`${API}/api/auth/change-password`, {
+      console.log('🔄 Sending password change request to:', `${API}/api/auth/change-password`);
+      
+      const requestData = {
+        currentPassword,
+        newPassword
+      };
+      
+      console.log('📦 Request payload:', JSON.stringify(requestData));
+
+      const response = await makeAuthenticatedRequest(`${API}/api/auth/change-password`, {
         method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          currentPassword,
-          newPassword
-        })
+        body: JSON.stringify(requestData)
       });
 
       const data = await response.json();
+      console.log('📨 Server response:', data);
+
       if (data.success) {
         setMessage('Password changed successfully!');
         setCurrentPassword('');
@@ -221,10 +357,11 @@ const Settings: React.FC = () => {
         console.log('✅ Password changed successfully');
       } else {
         setError(data.message || 'Failed to change password');
+        console.log('❌ Password change failed:', data.message);
       }
     } catch (err: any) {
       console.error('❌ Password change error:', err);
-      setError('Failed to change password');
+      setError('Failed to change password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -273,22 +410,16 @@ const Settings: React.FC = () => {
 
     try {
       console.log('🔄 Deleting user account');
-      const response = await fetch(`${API}/api/user-info`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+      const response = await makeAuthenticatedRequest(`${API}/api/auth/delete-account`, {
+        method: 'DELETE'
       });
 
       const data = await response.json();
-      if (data.success) {
-        // Also delete user account
-        await fetch(`${API}/api/auth/delete-account`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        
+      if (data.success) {        
         console.log('✅ Account deleted successfully');
-        // Handle logout and redirect
-        localStorage.removeItem('accessToken');
+        // Clear AuthContext on account deletion
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         window.location.href = '/auth/login';
       } else {
         setError(data.message || 'Failed to delete account');
@@ -301,12 +432,62 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleLinkChange = (platform: string, value: string) => {
+    setUserInfo(prev => ({
+      ...prev,
+      links: {
+        ...prev.links,
+        [platform]: value
+      }
+    }));
+  };
+
+  const handleExperienceChange = (field: string, value: string | number) => {
+    setUserInfo(prev => ({
+      ...prev,
+      experience: {
+        ...prev.experience,
+        [field]: value
+      }
+    }));
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'account', label: 'Account', icon: Shield },
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'danger', label: 'Danger Zone', icon: AlertCircle }
   ];
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-red-400 mx-auto mb-4" />
+              <p className="text-gray-400">Loading your settings...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-4" />
+              <p className="text-gray-400">Failed to load user data. Please try refreshing the page.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 p-4">
@@ -411,6 +592,130 @@ const Settings: React.FC = () => {
                       />
                     </div>
 
+                    {/* Experience Section */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-3">
+                        Experience
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Years of Experience</label>
+                          <input
+                            type="number"
+                            value={userInfo.experience?.years || ''}
+                            onChange={(e) => handleExperienceChange('years', parseInt(e.target.value) || 0)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Current Role</label>
+                          <input
+                            type="text"
+                            value={userInfo.experience?.currentRole || ''}
+                            onChange={(e) => handleExperienceChange('currentRole', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Student, Developer, etc."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Company/Institution</label>
+                          <input
+                            type="text"
+                            value={userInfo.experience?.company || ''}
+                            onChange={(e) => handleExperienceChange('company', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Company or institution name"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Skills (comma-separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={Array.isArray(userInfo.skills) ? userInfo.skills.join(', ') : ''}
+                        onChange={(e) => setUserInfo({
+                          ...userInfo, 
+                          skills: e.target.value ? e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill) : []
+                        })}
+                        className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black"
+                        placeholder="React, Node.js, Python, etc."
+                      />
+                    </div>
+
+                    {/* Platform Links Section */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-3">
+                        Platform Links
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">GitHub Username</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.github || ''}
+                            onChange={(e) => handleLinkChange('github', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your GitHub username"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">GeeksforGeeks Profile</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.gfg || ''}
+                            onChange={(e) => handleLinkChange('gfg', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your GFG profile ID"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">LeetCode Username</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.leetcode || ''}
+                            onChange={(e) => handleLinkChange('leetcode', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your LeetCode username"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">CodeChef Username</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.codechef || ''}
+                            onChange={(e) => handleLinkChange('codechef', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your CodeChef username"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Code360 Profile ID</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.code360 || ''}
+                            onChange={(e) => handleLinkChange('code360', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your Code360 profile ID"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Codeforces Username</label>
+                          <input
+                            type="text"
+                            value={userInfo.links?.codeforces || ''}
+                            onChange={(e) => handleLinkChange('codeforces', e.target.value)}
+                            className="w-full p-2 bg-white rounded border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black text-sm"
+                            placeholder="Your Codeforces username"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       onClick={handleUpdateProfile}
                       disabled={loading}
@@ -439,8 +744,15 @@ const Settings: React.FC = () => {
                   <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                     <h3 className="text-lg font-medium text-gray-200 mb-3">Current Information</h3>
                     <div className="space-y-2">
-                      <p className="text-gray-300"><span className="text-red-300">Username:</span> {user.username}</p>
-                      <p className="text-gray-300"><span className="text-red-300">Email:</span> {user.email}</p>
+                      <p className="text-gray-300">
+                        <span className="text-red-300">Username:</span> {user.username}
+                      </p>
+                      <p className="text-gray-300">
+                        <span className="text-red-300">Email:</span> {user.email}
+                        {user.emailVerified === false && (
+                          <span className="ml-2 text-yellow-400 text-sm">(Unverified)</span>
+                        )}
+                      </p>
                     </div>
                   </div>
                   
@@ -464,7 +776,6 @@ const Settings: React.FC = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* Email */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-200 mb-4">Update Email Address</h3>
@@ -496,14 +807,26 @@ const Settings: React.FC = () => {
                   {/* Change Password */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-200 mb-4">Change Password</h3>
-                    <div className="space-y-4">
+                    <form 
+                      onSubmit={(e) => {
+                        console.log('🔵 Form submission triggered');
+                        handleChangePassword(e);
+                      }}
+                      className="space-y-4"
+                    >
                       <div className="relative">
                         <input
                           type={showCurrentPassword ? 'text' : 'password'}
                           value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          onChange={(e) => {
+                            console.log('Current password input changed');
+                            setCurrentPassword(e.target.value);
+                          }}
                           className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none pr-12 text-black"
                           placeholder="Current password"
+                          required
+                          minLength={6}
+                          name="currentPassword"
                         />
                         <button
                           type="button"
@@ -518,9 +841,15 @@ const Settings: React.FC = () => {
                         <input
                           type={showNewPassword ? 'text' : 'password'}
                           value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
+                          onChange={(e) => {
+                            console.log('New password input changed');
+                            setNewPassword(e.target.value);
+                          }}
                           className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none pr-12 text-black"
                           placeholder="New password"
+                          required
+                          minLength={6}
+                          name="newPassword"
                         />
                         <button
                           type="button"
@@ -537,24 +866,27 @@ const Settings: React.FC = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none text-black"
                         placeholder="Confirm new password"
+                        required
+                        minLength={6}
+                        name="confirmPassword"
                       />
 
                       <button
-                        onClick={handleChangePassword}
-                        disabled={loading}
-                        className="bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="submit"
+                        disabled={!currentPassword || !newPassword || !confirmPassword || loading}
+                        className="w-full bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? (
                           <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 01-8-8v16a8 8 0 01-8-8z"/>
                           </svg>
                         ) : (
                           <Lock className="w-4 h-4 mr-2" />
                         )}
                         {loading ? 'Changing...' : 'Change Password'}
                       </button>
-                    </div>
+                    </form>
                   </div>
 
                   {/* Forgot Password */}

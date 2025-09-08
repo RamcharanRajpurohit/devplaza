@@ -25,7 +25,7 @@ mongoose.connect(mongoURI)
 // testDBConnection();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 app.use(cookieParser());// use some .env stuff ti make it secure
 app.use(express.json());
@@ -41,7 +41,7 @@ app.use(helmet());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
-app.use('/api/userinfo', userInfoRoutes);
+app.use('/api/user-info', userInfoRoutes); 
 
 
 // const del = async()=>{

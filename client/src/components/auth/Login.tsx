@@ -69,11 +69,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleForgotPassword = () => {
-    console.log('🔄 Navigating to forgot password with email:', email);
-    useAuthStore.getState().setEmail(email);
-    navigate('/auth/forgot-password');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4">
