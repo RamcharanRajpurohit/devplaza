@@ -256,7 +256,8 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
 
     const user = await User.findById(foundTokenDoc.user._id).lean();
-    res.status(200).json({ accessToken, email: user?.email });
+    res.status(200).json({ accessToken,email:user?.email,user :{ id: user?._id, username: user?.username,email: user?.email } });
+    console.log("✅ Tokens refreshed");
   } catch (err) {
     console.error("Refresh token error:", err);
     res.status(500).json({ message: "Something went wrong" });

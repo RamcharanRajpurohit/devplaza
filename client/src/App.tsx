@@ -12,7 +12,6 @@ import Settings from './components/dashboard/Settings';
 import NotFound from './components/common/NotFound';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import DevPlazaOTP from './components/auth/otp';
-import { SignupProvider } from './context/SignupContext';
 import ShowUser from './components/user/showUser';
 import UserInfoForm from './components/auth/UserInfoForm';
 
@@ -39,12 +38,15 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
         <ToastProvider>
-          <SignupProvider>
             <BrowserRouter>
               <Routes>
                 <Route path="/auth/*" element={<AuthPage />} />
-                <Route path="/auth/login" element={<AuthPage />} />
-                <Route path="/auth/signup" element={<Singup/>} />
+                <Route path="/auth/login" element={
+                  <AuthPage />
+                  } />
+                <Route path="/auth/signup" element={
+                  <Singup/>
+                  } />
                 <Route path="/forgot-password" element={<DevPlazaForgotPassword />} />
                 <Route path ="/auth/otp" element={<DevPlazaOTP />}/>
                 {/* Protected Routes */}
@@ -73,7 +75,6 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </SignupProvider>
         </ToastProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

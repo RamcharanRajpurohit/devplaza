@@ -4,27 +4,34 @@ interface UserData {
   id?: string;
   email?: string;
   username?: string;
+  hasProfile?: boolean;
   // Add other user properties as needed
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: UserData | null;
+  accessToken?: string | null;
   isAuthenticated: boolean;
   login: (token: string, userData: UserData) => void;
   logout: () => void;
   updateUser: (userData: UserData) => void;
   setEmail: (email: string) => void;
   refreshToken: () => Promise<void>;
-  isLoading: boolean; // Add loading state
+  setAccessToken: (token: string) => void;
+  isLoading: boolean;
+  setHasProfile: (hasProfile: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
+ 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Add loading state
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // Prevent multiple refresh calls
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null); // Token stored in memory
+  const [hasProfile, setHasProfile] = useState<boolean>(false);
 
   const refreshToken = async () => {
     // Prevent multiple simultaneous refresh attempts
@@ -33,11 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setIsRefreshing(true);
-    
+
     try {
       const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
         method: "POST",
-        credentials: "include", // ✅ include cookies
+        credentials: "include", // ✅ include cookies (httpOnly refresh token)
       });
 
       if (!response.ok) {
@@ -46,23 +53,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await response.json();
 
-      if (data.accessToken && data.email) {
-        // Store new token + user
-        localStorage.setItem("token", data.accessToken);
-        const userData = { email: data.email }; // you can add id, username later
-        localStorage.setItem("user", JSON.stringify(userData));
+      if (data.accessToken && data.user) {
+        setAccessToken(data.accessToken);
 
-        setUser(userData);
+        // Store full user object instead of just email
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        setUser(data.user);
         setIsAuthenticated(true);
 
-        console.log("✅ Token refreshed, user restored:", userData);
+        console.log("✅ Token refreshed, user restored:", data.user);
       } else {
         throw new Error("Invalid refresh response");
       }
+
     } catch (err) {
       console.error("❌ Refresh token failed:", err);
       // Clear any existing auth data
-      localStorage.removeItem('token');
+      setAccessToken(null);
       localStorage.removeItem('user');
       setUser(null);
       setIsAuthenticated(false);
@@ -73,59 +81,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check for stored token and user data on mount
+    // Check for stored user data on mount and attempt token refresh
     const initializeAuth = async () => {
-      const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      
-      if (token && storedUser) {
+
+      if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
           if (parsedUser && typeof parsedUser === 'object') {
-            setUser(parsedUser);
-            setIsAuthenticated(true);
-            setIsLoading(false);
-            console.log('✅ Restored auth state from localStorage');
+            // We have user data, attempt to refresh token
+            console.log('🔄 Found stored user, attempting token refresh...');
+            await refreshToken();
             return;
           }
         } catch (error) {
           console.error('❌ Error parsing stored user data:', error);
-          // Clear invalid data
           localStorage.removeItem('user');
-          localStorage.removeItem('token');
         }
       }
-      
-      // Only attempt refresh if no valid stored data
-      console.log('🔄 No valid stored auth, attempting token refresh...');
+
+      // No stored user data, attempt refresh anyway (in case refresh token cookie exists)
+      console.log('🔄 No stored user, attempting token refresh...');
       await refreshToken();
     };
 
     initializeAuth();
-  }, []); // Remove dependencies to prevent re-runs
+  }, []);
 
   useEffect(() => {
     console.log('Auth State Changed:', {
       isAuthenticated,
-      token: localStorage.getItem('token'),
+      hasToken: !!accessToken,
       isLoading
     });
-  }, [isAuthenticated, user, isLoading]);
-  
+  }, [isAuthenticated, user, isLoading, accessToken]);
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
 
     const interval = setInterval(() => {
       refreshToken();
-    }, 14 * 60 * 1000);
+    }, 14 * 60 * 1000); // Refresh every 14 minutes
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, isLoading]); // Add isLoading dependency
+  }, [isAuthenticated, isLoading]);
 
   const login = (token: string, userData: UserData) => {
     try {
-      localStorage.setItem('token', token);
+      // Store token in memory and user data in localStorage
+      setAccessToken(token);
       localStorage.setItem('user', JSON.stringify(userData));
+
+
       setUser(userData);
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -145,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    setAccessToken(null); // Clear token from memory
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
@@ -163,16 +170,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateAccessToken = (token: string) => {
+    setAccessToken(token);
+    console.log('✅ Access token updated');
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      login, 
-      logout, 
+    <AuthContext.Provider value={{
+      user,
+      setHasProfile,
+      accessToken,
+      isAuthenticated,
+      login,
+      logout,
       updateUser,
       setEmail,
       refreshToken,
-      isLoading 
+      setAccessToken: updateAccessToken,
+      isLoading
     }}>
       {children}
     </AuthContext.Provider>

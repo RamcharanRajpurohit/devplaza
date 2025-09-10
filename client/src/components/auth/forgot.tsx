@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { useAuthStore } from '../../services/authState';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-
+import { useAuth } from '../../context/AuthContext';
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export default function DevPlazaForgotPassword() {
-  const { email: storedEmail } = useAuthStore();
-  const [email, setEmail] = useState(storedEmail || '');
+  const { user: user,setEmail } = useAuth();
+  const [email, setEmailInput] = useState(user?.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [error, setError] = useState('');
@@ -36,7 +35,7 @@ export default function DevPlazaForgotPassword() {
       const response = await axios.post(`${API}/api/auth/forgot-password`, { email });
       
       console.log('✅ Forgot password request successful:', response.data);
-      useAuthStore.getState().setEmail(email);
+      setEmail(email);
       setMessage(response.data.message || 'Reset code sent to your email');
       setIsEmailSent(true);
       
@@ -190,7 +189,7 @@ export default function DevPlazaForgotPassword() {
               type="email"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value);
+                setEmailInput(e.target.value);
                 setError('');
               }}
               className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"

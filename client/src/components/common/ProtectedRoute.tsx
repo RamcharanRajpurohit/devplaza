@@ -1,27 +1,21 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import type { JSX } from 'react';
+import { useToast } from '../../context/ToastContext';
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user} = useAuth();
+  const { showToast } = useToast();
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  if (!user) {
+    return <Navigate to="/auth/login" replace />;
   }
 
-  // If not authenticated and not loading, redirect to auth
-  if (!isAuthenticated) {
-    console.log('❌ User not authenticated, redirecting to /auth');
-    return <Navigate to="/auth" replace />;
+  if (!user.hasProfile) {
+    showToast('Please complete your profile first', 'info');
+    return <Navigate to="/complete-profile" replace />;
   }
 
-  // If authenticated, render the protected content
-  return children;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -46,7 +46,7 @@ const UserInfoForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { accessToken ,setHasProfile} = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +67,13 @@ const UserInfoForm: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}` // Include token in headers
         },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
+        setHasProfile(true);
         navigate('/dashboard');
       } else {
         const errorData = await response.json();

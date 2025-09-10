@@ -3,9 +3,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-// import { useAuthStore } from '../../services/authState';
-import { useSignup } from '../../context/SignupContext';
 import { useAuth } from '../../context/AuthContext';
+
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -14,8 +13,7 @@ export default function Signup() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setSignupData } = useSignup();
-   const { login } = useAuth();
+   const { login ,setEmail} = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -30,17 +28,10 @@ export default function Signup() {
     try {
       const res = await axios.post(`${API}/api/auth/signup`, formData);
       console.log('✅ Signup successful:', res.data);
-      
-      // if (res.data.tempToken) {
-        setSignupData({ 
-          email: formData.email,
-        //   tempToken: res.data.tempToken
-        });
+        setEmail( formData.email);
+        localStorage.setItem("user", JSON.stringify({ email: formData.email, username: formData.username }));
         setMessage(res.data.message || "Verification code sent to your email");
         navigate('/auth/otp', { replace: true }); // Use replace to prevent back navigation
-      // } else {
-      //   throw new Error('No temporary token received');
-      // }
     } catch (err: any) {
       console.error('❌ Signup error:', err);
       if (err.response?.data?.message) {

@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import React, {useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
 import axios from "axios";
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
-import { useAuthStore } from '../../services/authState';
-
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmailInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login,setEmail } = useAuth();
+
+
+   
+
   
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +45,7 @@ const Login: React.FC = () => {
     console.error('❌ Login error:', data);
 
     if (status === 403 && data?.code === "USER_NOT_VERIFIED") {
-      useAuthStore.getState().setEmail(email);
+      setEmail(email);
       // 🚀 Clean redirect with context
       console.log('🚀 Redirecting to OTP verification for:', email);
       navigate('/auth/otp');
@@ -94,7 +96,7 @@ const Login: React.FC = () => {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmailInput(e.target.value)}
               className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               placeholder="you@example.com"
             />

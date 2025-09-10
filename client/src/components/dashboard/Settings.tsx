@@ -51,7 +51,7 @@ interface User {
 
 const Settings: React.FC = () => {
   // Get updateUser from AuthContext
-  const { refreshToken, updateUser } = useAuth();
+  const { refreshToken, updateUser,accessToken } = useAuth();
   
   // User state
   const [user, setUser] = useState<User | null>(null);
@@ -170,7 +170,7 @@ const Settings: React.FC = () => {
   };
 
   const getAuthHeaders = (): Record<string, string> => {
-    const token = localStorage.getItem('token');
+    const token = accessToken;
     console.log('Retrieved token for auth headers:', token);
     if (!token) {
       console.log('No token found, redirecting to login');
@@ -418,7 +418,6 @@ const Settings: React.FC = () => {
       if (data.success) {        
         console.log('✅ Account deleted successfully');
         // Clear AuthContext on account deletion
-        localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
       } else {

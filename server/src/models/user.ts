@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
     type :Boolean,
     default:false,
   },
+  hasProfile:{
+    type: Boolean,
+    default:false,
+  },
   provider: {
     type: String,
     enum: ["local", "google"],

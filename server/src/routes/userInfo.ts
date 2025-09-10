@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { UserInfo } from '../models/userInfo';
+import { User } from '../models/user';
 
 const router = express.Router();
 
@@ -72,6 +73,7 @@ router.post('/', authenticateToken, async (req, res) => {
       await userInfo.save();
       await userInfo.populate('user', 'email username');
     }
+    await User.findByIdAndUpdate(userId, { hasProfile: true });
     console.log('✅ User info saved successfully:', userInfo);
     res.status(200).json({ success: true, data: userInfo });
   } catch (error) {

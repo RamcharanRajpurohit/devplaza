@@ -9,6 +9,14 @@ const API_URL = 'http://localhost:5000/api';
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
+// Function to get token - will be set by the app
+let getAccessToken: (() => string | null ) | null = null;
+
+// Function to set the token getter
+export const setTokenGetter = (tokenGetter: () => string | null) => {
+  getAccessToken = tokenGetter;
+};
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -32,10 +40,9 @@ const refreshToken = async () => {
       withCredentials: true // to include httpOnly cookie
     });
     const { token } = response.data;
-    localStorage.setItem('token', token);
+    
     return token;
   } catch (error) {
-    localStorage.removeItem('token');
     window.location.href = '/auth';
     throw error;
   }
@@ -44,7 +51,9 @@ const refreshToken = async () => {
 // Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Get token dynamically when making request
+    const token = getAccessToken?.();
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -99,7 +108,6 @@ api.interceptors.response.use(
   }
 );
 
-
 // Auth services
 export const authService = {
   login: (email: string, password: string) => 
@@ -125,8 +133,6 @@ export const authService = {
 export const profileService = {
   getProfile: () => 
     api.get('/profile'),
-
-  
   
   updateProfile: (profileData: any) => 
     api.put('/profile', profileData),
