@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../services/authState';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
 const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -14,6 +15,14 @@ export default function DevPlazaForgotPassword() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+   const { isAuthenticated } = useAuth();
+  
+      useEffect(() => {
+      if (isAuthenticated) {
+          // If user is authenticated, redirect to dashboard
+          window.location.href = '/dashboard';
+          }
+      }, [isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +155,12 @@ export default function DevPlazaForgotPassword() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4">
+      <button
+              onClick={() => navigate(-1)}
+              className="absolute top-4 left-4 flex items-center text-md text-red-400 hover:text-red-300 transition-colors duration-200"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2 " /> Back
+            </button>
       <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
         {/* Header with Back Button */}
         <div className="mb-6">

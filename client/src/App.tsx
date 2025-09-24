@@ -1,7 +1,7 @@
 import './App.css'
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Singup from './components/auth/singup';
 import DevPlazaForgotPassword from './components/auth/forgot';
 import AuthPage from './components/auth/Login';
@@ -15,21 +15,20 @@ import DevPlazaOTP from './components/auth/otp';
 import { SignupProvider } from './context/SignupContext';
 import ShowUser from './components/user/showUser';
 import UserInfoForm from './components/auth/UserInfoForm';
-
-
-
+import DevPlazaLanding from './components/landing/main';
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   if (!googleClientId) {
-    console.error('Google Client ID not found in environment variables');
-    console.error('Make sure VITE_GOOGLE_CLIENT_ID is set in your .env file');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-600">Configuration Error</h1>
           <p className="text-gray-600 mt-2">Google Client ID not found</p>
-          <p className="text-sm text-gray-500 mt-1">Check your .env file and restart the dev server</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Check your .env file and restart the dev server
+          </p>
         </div>
       </div>
     );
@@ -41,43 +40,73 @@ function App() {
         <ToastProvider>
           <SignupProvider>
             <BrowserRouter>
-              <Routes>
-                <Route path="/auth/*" element={<AuthPage />} />
-                <Route path="/auth/login" element={<AuthPage />} />
-                <Route path="/auth/signup" element={<Singup/>} />
-                <Route path="/forgot-password" element={<DevPlazaForgotPassword />} />
-                <Route path ="/auth/otp" element={<DevPlazaOTP />}/>
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <CodingProfileDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/complete-profile" element={<UserInfoForm/>} />
-                <Route 
-                  path="/user/:username" 
-                  element={
-                    <ProtectedRoute>
-                      <ShowUser />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                {/* Public Profile Route */}
-                <Route path="/profile/:username" element={<PublicProfile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AuthRoutes />
             </BrowserRouter>
           </SignupProvider>
         </ToastProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
-  )
+  );
 }
 
-export default App
+function AuthRoutes() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      {/* Auth Routes with redirect */}
+      <Route
+        path="/auth/login"
+        element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
+      />
+      <Route
+        path="/auth/signup"
+        element={isAuthenticated ? <Navigate to="/dashboard" /> : <Singup />}
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" /> : <DevPlazaForgotPassword />
+        }
+      />
+      <Route
+        path="/auth/otp"
+        element={isAuthenticated ? <Navigate to="/dashboard" /> : <DevPlazaOTP />}
+      />
+
+      {/* Protected Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <CodingProfileDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/:username"
+        element={
+          <ProtectedRoute>
+            <ShowUser />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Public + Default Routes */}
+      <Route path="/" element={<DevPlazaLanding />} />
+      <Route path="/complete-profile" element={<UserInfoForm />} />
+      <Route path="/profile/:username" element={<PublicProfile />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
+export default App;

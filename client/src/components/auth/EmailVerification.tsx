@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const EmailVerification: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+   const { isAuthenticated } = useAuth();
+  
+      useEffect(() => {
+      if (isAuthenticated) {
+          // If user is authenticated, redirect to dashboard
+          window.location.href = '/dashboard';
+          }
+      }, [isAuthenticated]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();

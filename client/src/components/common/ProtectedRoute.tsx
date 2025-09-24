@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   // If not authenticated and not loading, redirect to auth
   if (!isAuthenticated) {
     console.log('❌ User not authenticated, redirecting to /auth');
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // If authenticated, render the protected content

@@ -10,6 +10,14 @@ export default function DevPlazaOTP() {
   const { signupData, clearSignupData } = useSignup();
   const navigate = useNavigate();
   const{ login }= useAuth();
+   const { isAuthenticated } = useAuth();
+  
+      useEffect(() => {
+      if (isAuthenticated) {
+          // If user is authenticated, redirect to dashboard
+          window.location.href = '/dashboard';
+          }
+      }, [isAuthenticated]);
 
   // move this state above the redirect effect
   const [verificationSuccess, setVerificationSuccess] = useState(false);
