@@ -1,6 +1,6 @@
-import React, { useState,useEffect } from 'react';
+import  { useState,useEffect } from 'react';
 
-import { Menu, X, Code, Users, Trophy, Github, Star } from 'lucide-react';
+import { Menu, X,Users, Trophy, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 const DevPlazaLanding = () => {
@@ -98,7 +98,7 @@ const DevPlazaLanding = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link  to="/auth/singup"  className="px-8 py-4 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg text-white font-medium transition-all duration-300 shadow-lg shadow-red-900/30 transform hover:scale-105">
+                <Link  to="/auth/signup"  className="px-8 py-4 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg text-white font-medium transition-all duration-300 shadow-lg shadow-red-900/30 transform hover:scale-105">
                   Get Started Free
                 </Link>
                 <Link  to="/profile/ram"  className="px-8 py-4 border border-red-600/50 text-red-400 hover:bg-red-900/30 rounded-lg transition-all duration-200 font-medium">
@@ -126,7 +126,7 @@ const DevPlazaLanding = () => {
             <div className="relative">
               <div className="relative h-96 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-xl shadow-2xl overflow-hidden">
                
-                 <img src="public/demo.png" alt="DevPlaza Preview" className="w-full h-full object-cover" /> 
+                 <img src="/demo.png" alt="DevPlaza Preview" className="w-full h-full object-cover" /> 
                 
                 {/* Placeholder background pattern */}
                 <div 

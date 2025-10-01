@@ -242,7 +242,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const newRefreshToken = jwt.sign(
       { _id: foundTokenDoc.user._id.toString() } as RefreshTokenPayload,
       process.env.REFRESH_TOKEN_SECRET as string,
-      { expiresIn: "1d" }
+      { expiresIn: "2d" }
     );
 
     foundTokenDoc.refreshToken = [...newRefreshTokenArray, newRefreshToken];
@@ -252,7 +252,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: "none",
       secure: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 2000,
     });
 
     const user = await User.findById(foundTokenDoc.user._id).lean();
@@ -327,7 +327,7 @@ export const googleAuth = async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: "none",
       secure: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 2000,
     });
 
     return res.json({
