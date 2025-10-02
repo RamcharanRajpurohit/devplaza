@@ -8,7 +8,7 @@ import { authService } from '../../services/api';
 import { useAuthStore } from '../../services/authState';
 import { ArrowLeft } from "lucide-react";
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = import.meta.env.VITE_API_BASE || "https://localhost:5000";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');

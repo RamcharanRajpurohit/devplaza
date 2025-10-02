@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsRefreshing(true);
     
     try {
-      const response = await fetch("http://localhost:5000/api/auth/refresh-token", {
+      const response = await fetch("https://localhost:5000/api/auth/refresh-token", {
         method: "POST",
         credentials: "include", // ✅ include cookies
       });
@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(userData);
         setIsAuthenticated(true);
+        login(data.accessToken,data.user)
 
         console.log("✅ Token refreshed, user restored:", userData);
       } else {

@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = import.meta.env.VITE_API_BASE || "https://localhost:5000";
 
 export default function DevPlazaForgotPassword() {
   const { email: storedEmail } = useAuthStore();

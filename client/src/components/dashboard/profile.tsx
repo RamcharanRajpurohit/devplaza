@@ -12,10 +12,9 @@ import {
   Menu
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
-import ErrorAlert from '../../common/ErrorAlert';
+import ErrorAlert from '../common/ErrorAlert';
 import type EnhancedProfileData from '../../types/enhanceData';
 import PlatformCard from './platformcard';
-import StatCard from './stataCard';
 import DifficultyBar from './diifBar';
 
 const CodingProfileDashboard: React.FC = () => {
@@ -43,9 +42,17 @@ const CodingProfileDashboard: React.FC = () => {
     try {
       setRefreshing(true);
       const response = await profileService.getPublicProfile(user.username);
+      console.log(response)
+
+
       setProfileData(response.data);
+      console.log(response.data);
       setError('');
     } catch (err: any) {
+      console.log(err)
+      if (err.response.data.error == "Please complete your profile links first.") {
+        navigate('/complete-profile')
+      }
       setError(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
@@ -141,14 +148,14 @@ const CodingProfileDashboard: React.FC = () => {
       </button>
 
       {/* Share Profile Button - Fixed in corner */}
-     {/* Share Profile Button - Fixed in corner */}
-<button
-  onClick={handleShareProfile}
-  className="fixed top-3 right-3 z-50 p-2 sm:p-3 bg-gradient-to-r from-red-800 to-red-600 rounded-full shadow-lg hover:from-red-700 hover:to-red-500 transition-all duration-300 hover:scale-105"
-  title="Share Profile"
->
-  <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-</button>
+      {/* Share Profile Button - Fixed in corner */}
+      <button
+        onClick={handleShareProfile}
+        className="fixed top-3 right-3 z-50 p-2 sm:p-3 bg-gradient-to-r from-red-800 to-red-600 rounded-full shadow-lg hover:from-red-700 hover:to-red-500 transition-all duration-300 hover:scale-105"
+        title="Share Profile"
+      >
+        <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+      </button>
 
 
       {/* Sidebar */}
@@ -169,26 +176,81 @@ const CodingProfileDashboard: React.FC = () => {
           {/* Stats Section - More compact on mobile */}
           {validStats.length > 0 && (
             <div className="mb-6 sm:mb-8">
-              <div className={`grid gap-3 sm:gap-4 lg:gap-6 ${
-                validStats.length === 1 ? 'grid-cols-1 max-w-xs sm:max-w-md mx-auto' :
-                validStats.length === 2 ? 'grid-cols-1 xs:grid-cols-2' :
-                validStats.length === 3 ? 'grid-cols-1 xs:grid-cols-2 lg:grid-cols-3' :
-                'grid-cols-1 xs:grid-cols-2 lg:grid-cols-4'
-              }`}>
-                {validStats.map((stat, index) => (
-                  <div key={index} className="flex justify-center">
-                    <div className="w-full max-w-[280px] sm:max-w-none">
-                      <DonutChart
-                        total={278}
-                        data={[
-                          { label: "Completed", value: 120, color: "#22c55e" },
-                          { label: "In Progress", value: 30, color: "#f87171" },
-                          { label: "Remaining", value: 128, color: "#facc15" },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-2">
+                {/* DSA Problems Chart - Difficulty Breakdown */}
+                {profileData.problemsSolved?.dsa?.total && (
+                  <DonutChart
+                    total={profileData.problemsSolved.dsa.total.overall}
+                    data={[
+                      {
+                        label: "Easy",
+                        value: profileData.problemsSolved.dsa.total.easy,
+                        color: "#22c55e",
+                        platformBreakdown: [
+                          { platform: "LeetCode", value: profileData.problemsSolved.dsa.leetcode.easy },
+                          { platform: "GeeksforGeeks", value: profileData.problemsSolved.dsa.gfg.easy },
+                          { platform: "Code360", value: profileData.problemsSolved.dsa.code360.easy },
+                        ]
+                      },
+                      {
+                        label: "Medium",
+                        value: profileData.problemsSolved.dsa.total.medium,
+                        color: "#f59e0b",
+                        platformBreakdown: [
+                          { platform: "LeetCode", value: profileData.problemsSolved.dsa.leetcode.medium },
+                          { platform: "GeeksforGeeks", value: profileData.problemsSolved.dsa.gfg.medium },
+                          { platform: "Code360", value: profileData.problemsSolved.dsa.code360.medium },
+                        ]
+                      },
+                      {
+                        label: "Hard",
+                        value: profileData.problemsSolved.dsa.total.hard,
+                        color: "#ef4444",
+                        platformBreakdown: [
+                          { platform: "LeetCode", value: profileData.problemsSolved.dsa.leetcode.hard },
+                          { platform: "GeeksforGeeks", value: profileData.problemsSolved.dsa.gfg.hard },
+                          { platform: "Code360", value: profileData.problemsSolved.dsa.code360.hard },
+                        ]
+                      },
+                    ]}
+                    platformBreakdown={[
+                      { platform: "LeetCode", value: profileData.problemsSolved.dsa.leetcode.total },
+                      { platform: "GeeksforGeeks", value: profileData.problemsSolved.dsa.gfg.total },
+                      { platform: "Code360", value: profileData.problemsSolved.dsa.code360.total },
+                    ]}
+                    showPlatformBreakdown={true}
+                  />
+                )}
+
+                {/* Competitive Programming Chart - Platform Breakdown */}
+                {profileData.problemsSolved?.competitiveProgramming?.total && (
+                  <DonutChart
+                    total={profileData.problemsSolved.competitiveProgramming.total}
+                    data={[
+                      {
+                        label: "CodeChef",
+                        value: profileData.problemsSolved.competitiveProgramming.codechef,
+                        color: "#8b5cf6"
+                      },
+                      {
+                        label: "Codeforces",
+                        value: profileData.problemsSolved.competitiveProgramming.codeforces,
+                        color: "#3b82f6"
+                      },
+                    ]}
+                    platformBreakdown={[
+                      {
+                        platform: "CodeChef",
+                        value: profileData.problemsSolved.competitiveProgramming.codechef
+                      },
+                      {
+                        platform: "Codeforces",
+                        value: profileData.problemsSolved.competitiveProgramming.codeforces
+                      },
+                    ]}
+                    showPlatformBreakdown={true}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -198,6 +260,20 @@ const CodingProfileDashboard: React.FC = () => {
             {/* Problems Solved Section */}
             {(hasDSAProblems || hasCPProblems) && (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                {hasPlatforms && (
+                  <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl">
+                    <h3 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
+                      Platform Rankings
+                    </h3>
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                      {Object.entries(profileData.platforms)
+                        .filter(([, platform]) => hasValue(platform.rating) || hasValue(platform.rank))
+                        .map(([key, platform]) => (
+                          <PlatformCard key={key} platform={platform} />
+                        ))}
+                    </div>
+                  </div>
+                )}
                 <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl">
                   <h3 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
                     Problems Solved
@@ -210,31 +286,31 @@ const CodingProfileDashboard: React.FC = () => {
                         Data Structures & Algorithms
                       </h4>
                       <div className="space-y-3 sm:space-y-4">
-                        {hasValue(profileData.problemsSolved.dsa.easy) && (
+                        {hasValue(profileData.problemsSolved.dsa.total.easy) && (
                           <DifficultyBar
                             label="Easy"
-                            solved={profileData.problemsSolved.dsa.easy}
+                            solved={profileData.problemsSolved.dsa.total.easy}
                             color="bg-green-500"
                           />
                         )}
-                        {hasValue(profileData.problemsSolved.dsa.medium) && (
+                        {hasValue(profileData.problemsSolved.dsa.total.medium) && (
                           <DifficultyBar
                             label="Medium"
-                            solved={profileData.problemsSolved.dsa.medium}
+                            solved={profileData.problemsSolved.dsa.total.medium}
                             color="bg-yellow-500"
                           />
                         )}
-                        {hasValue(profileData.problemsSolved.dsa.hard) && (
+                        {hasValue(profileData.problemsSolved.dsa.total.hard) && (
                           <DifficultyBar
                             label="Hard"
-                            solved={profileData.problemsSolved.dsa.hard}
+                            solved={profileData.problemsSolved.dsa.total.hard}
                             color="bg-red-500"
                           />
                         )}
                       </div>
                       <div className="text-center mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-lg">
                         <div className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
-                          {profileData.problemsSolved.dsa.total}
+                          {profileData.problemsSolved.dsa.total.overall}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-400 mt-1">Total DSA Problems</div>
                       </div>
@@ -272,20 +348,7 @@ const CodingProfileDashboard: React.FC = () => {
                 </div>
 
                 {/* Platform Rankings */}
-                {hasPlatforms && (
-                  <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl">
-                    <h3 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
-                      Platform Rankings
-                    </h3>
-                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-                      {Object.entries(profileData.platforms)
-                        .filter(([, platform]) => hasValue(platform.rating) || hasValue(platform.rank))
-                        .map(([key, platform]) => (
-                          <PlatformCard key={key} platform={platform} />
-                        ))}
-                    </div>
-                  </div>
-                )}
+                
               </div>
             )}
 

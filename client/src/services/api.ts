@@ -4,7 +4,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://localhost:5000/api';
 
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];

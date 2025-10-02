@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { profileService } from '../../services/api';
 import type { ProfileData } from '../../types/profile';
 import { 
-  User, MapPin, Building, Eye, RefreshCw, Trophy, Star, ChevronRight, 
-  BarChart3, Code, Target, Award, Share2, Calendar, Users, GitBranch,
-  Zap, Flame, TrendingUp, Clock, Medal
+ MapPin, Building, Eye, RefreshCw, Trophy, Star, 
+   Code, Share2, Calendar, Users,
+   Flame,
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
-import ErrorAlert from '../../common/ErrorAlert';
+import ErrorAlert from '../common/ErrorAlert';
 import { useToast } from '../../context/ToastContext';
 
 interface EnhancedProfileData {

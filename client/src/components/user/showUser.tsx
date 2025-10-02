@@ -142,7 +142,7 @@ const CodingProfileDashboard = () => {
       try {
         setLoading(true);
         console.log(`🔍 Fetching public profile for username: ${username}`);
-        const response = await fetch(`http://localhost:5000/api/profile/${username}`);
+        const response = await fetch(`https://localhost:5000/api/profile/${username}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch profile');

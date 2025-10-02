@@ -8,7 +8,7 @@ import { useSignup } from '../../context/SignupContext';
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft } from "lucide-react";
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API = import.meta.env.VITE_API_BASE || "https://localhost:5000";
 
 export default function Signup() {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });

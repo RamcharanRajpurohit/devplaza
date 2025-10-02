@@ -161,6 +161,7 @@ interface RefreshTokenPayload {
 }
 
 export const refreshToken = async (req: Request, res: Response) => {
+  console.log("hehe");
   console.log("incoming cookies:", req.cookies);
   try {
     const cookies = req.cookies;
@@ -252,11 +253,11 @@ export const refreshToken = async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: "none",
       secure: true,
-      maxAge: 24 * 60 * 60 * 2000,
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     const user = await User.findById(foundTokenDoc.user._id).lean();
-    res.status(200).json({ accessToken, email: user?.email });
+    res.status(200).json({ accessToken, email: user?.email,user:user });
   } catch (err) {
     console.error("Refresh token error:", err);
     res.status(500).json({ message: "Something went wrong" });

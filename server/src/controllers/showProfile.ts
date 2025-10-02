@@ -7,36 +7,55 @@ import { fetchCodechefProfile } from "../services/codechef";
 import { fetchCode360Profile } from "../services/code360";
 import { User } from "../models/user";
 import { UserInfo } from "../models/userInfo";
+import type EnhancedProfileData from "../types/enhanceData";
 
 interface ProfileParams {
   username: string;
 }
 
-// Helper function to generate activity calendar data (you'll need to implement actual date tracking)
-const generateActivityCalendar = (submissions: any) => {
-  // This is a placeholder - you'll need to implement actual date tracking
-  const calendar = [];
-  const currentDate = new Date();
-  
-  for (let i = 365; i >= 0; i--) {
-    const date = new Date(currentDate);
-    date.setDate(date.getDate() - i);
-    
-    calendar.push({
-      date: date.toISOString().split('T')[0],
-      count: Math.floor(Math.random() * 6), // Random for now - replace with actual data
-      level: Math.floor(Math.random() * 5)
-    });
-  }
-  
-  return calendar;
-};
-
-// Helper function to extract topic analysis from GFG submissions
-const extractTopicAnalysis = (submissions: any) => {
+// Helper function to merge topic analysis from all platforms
+const mergeTopicAnalysis = (
+  gfgSubmissions: any,
+  leetcodeTopics: any,
+  codeforcesTopics: any
+): { [key: string]: number } => {
   const topics: { [key: string]: number } = {};
   
-  // This is based on common problem patterns - you might want to enhance this
+  // Topic mapping for normalization
+  const topicMapping: { [key: string]: string } = {
+    'arrays': 'array',
+    'array': 'array',
+    'dp': 'dynamicProgramming',
+    'dynamic programming': 'dynamicProgramming',
+    'dynamicprogramming': 'dynamicProgramming',
+    'trees': 'tree',
+    'tree': 'tree',
+    'binary tree': 'tree',
+    'graphs': 'graph',
+    'graph': 'graph',
+    'dfs and bfs': 'graph',
+    'strings': 'string',
+    'string': 'string',
+    'sorting': 'sorting',
+    'greedy': 'greedy',
+    'math': 'math',
+    'number theory': 'math',
+    'binary search': 'searching',
+    'searching': 'searching',
+    'linked list': 'linkedList',
+    'linkedlist': 'linkedList',
+    'stack': 'stack',
+    'queue': 'queue',
+    'heap': 'heap',
+    'hashing': 'hashing',
+    'backtracking': 'backtracking',
+    'two pointers': 'twoPointers',
+    'sliding window': 'slidingWindow',
+    'bit manipulation': 'bitManipulation',
+    'bitmasks': 'bitManipulation',
+  };
+
+  // Extract from GFG (keyword-based)
   const topicKeywords = {
     'array': ['array', 'subarray', 'kadane'],
     'dynamicProgramming': ['dp', 'knapsack', 'fibonacci', 'climb', 'coin'],
@@ -50,7 +69,7 @@ const extractTopicAnalysis = (submissions: any) => {
     'queue': ['queue', 'circular']
   };
 
-  Object.entries(submissions).forEach(([difficulty, problems]: [string, any]) => {
+  Object.entries(gfgSubmissions).forEach(([difficulty, problems]: [string, any]) => {
     Object.values(problems).forEach((problem: any) => {
       const problemName = problem.pname?.toLowerCase() || '';
       
@@ -62,6 +81,18 @@ const extractTopicAnalysis = (submissions: any) => {
     });
   });
 
+  // Merge LeetCode topics
+  Object.entries(leetcodeTopics || {}).forEach(([topic, count]: [string, any]) => {
+    const normalized = topicMapping[topic.toLowerCase()] || topic.replace(/[-\s]/g, '');
+    topics[normalized] = (topics[normalized] || 0) + count;
+  });
+
+  // Merge Codeforces topics
+  Object.entries(codeforcesTopics || {}).forEach(([topic, count]: [string, any]) => {
+    const normalized = topicMapping[topic.toLowerCase()] || topic.replace(/[-\s]/g, '');
+    topics[normalized] = (topics[normalized] || 0) + count;
+  });
+
   return topics;
 };
 
@@ -69,7 +100,6 @@ const extractTopicAnalysis = (submissions: any) => {
 const generateAwards = (data: any) => {
   const awards = [];
   
-  // Calculate total problems solved across all platforms with null checks
   const totalSolved = 
     (data.leetcode?.totalSolved || 0) +
     (data.gfg?.userInfo?.total_problems_solved || 0) +
@@ -77,29 +107,46 @@ const generateAwards = (data: any) => {
     (data.codechef?.problemsSolved ? parseInt(data.codechef.problemsSolved) : 0) +
     (data.code360?.data?.dsa_domain_data?.problem_count_data?.total_count || 0);
 
-  if (totalSolved > 100) {
+  // Problem Solver Awards
+  if (totalSolved > 500) {
+    awards.push({
+      id: 'elite_problem_solver',
+      title: 'Elite Problem Solver',
+      icon: '👑',
+      color: 'gold'
+    });
+  } else if (totalSolved > 100) {
     awards.push({
       id: 'problem_solver',
       title: 'Problem Solver',
-      description: `Solved ${totalSolved}+ problems`,
       icon: '🏆',
-      color: 'gold',
-      earnedDate: new Date().toISOString()
+      color: 'gold'
     });
   }
 
-  if (data.leetcode?.contest?.attended && data.leetcode.contest.attended > 0) {
+  // Contest Awards
+  const totalContests = 
+    (data.leetcode?.contest?.attended || 0) +
+    (data.codechef?.contestsParticipated || 0) +
+    (data.codeforces?.contests?.total || 0);
+
+  if (totalContests > 50) {
     awards.push({
-      id: 'contest_participant',
-      title: 'Contest Warrior',
-      description: `Participated in ${data.leetcode.contest.attended} contests`,
+      id: 'contest_legend',
+      title: 'Contest Legend',
       icon: '⚔️',
-      color: 'purple',
-      earnedDate: new Date().toISOString()
+      color: 'red'
+    });
+  } else if (totalContests > 10) {
+    awards.push({
+      id: 'contest_warrior',
+      title: 'Contest Warrior',
+      icon: '⚔️',
+      color: 'purple'
     });
   }
 
-  // Multi-platform award
+  // Multi-Platform Award
   const activePlatforms = [
     data.github, data.leetcode, data.codeforces, 
     data.gfg, data.codechef, data.code360
@@ -109,10 +156,43 @@ const generateAwards = (data: any) => {
     awards.push({
       id: 'multi_platform',
       title: 'Multi-Platform Coder',
-      description: `Active on ${activePlatforms} platforms`,
       icon: '🌟',
-      color: 'blue',
-      earnedDate: new Date().toISOString()
+      color: 'blue'
+    });
+  }
+
+  // GitHub Star Award
+  if (data.github?.stats?.totalStars > 50) {
+    awards.push({
+      id: 'github_star',
+      title: 'GitHub Star',
+      icon: '⭐',
+      color: 'yellow'
+    });
+  }
+
+  // Rating-based Awards
+  if (data.codeforces?.rating > 1900 || data.leetcode?.contest?.rating > 2000) {
+    awards.push({
+      id: 'competitive_master',
+      title: 'Competitive Master',
+      icon: '🎯',
+      color: 'red'
+    });
+  }
+
+  // Streak Award
+  const maxStreak = Math.max(
+    data.gfg?.userInfo?.pod_solved_longest_streak || 0,
+    data.leetcode?.calendar?.streak || 0
+  );
+
+  if (maxStreak > 30) {
+    awards.push({
+      id: 'streak_master',
+      title: 'Streak Master',
+      icon: '🔥',
+      color: 'orange'
     });
   }
 
@@ -121,23 +201,23 @@ const generateAwards = (data: any) => {
 
 export const showProfile = async (req: Request<ProfileParams>, res: Response) => {
   try {
-     const { username } = req.params;
+    const { username } = req.params;
     console.log("📡 Fetching profile for:", username);
 
-    // 🔥 Find base user
+    // Find base user
     const userData = await User.findOne({ username });
-    console.log("✅ User data:", userData);
+    
 
-    // 🔥 Find userInfo by reference
+    // Find userInfo by reference
     const userInfoData = await UserInfo.findOne({ user: userData?._id });
-    console.log("✅ UserInfo data:", userInfoData);
+    
 
     if (!userData || !userInfoData) {
       console.warn("⚠️ User not found:", username);
       return res.status(404).json({ error: "User not found" });
     }
 
-    // 🚨 Ensure links exist
+    // Ensure links exist
     if (
       !userInfoData?.links?.code360 ||
       !userInfoData?.links?.github ||
@@ -152,7 +232,7 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
         .json({ error: "Please complete your profile links first." });
     }
 
-    // 🔥 Fetch all profiles in parallel
+    // Fetch all profiles in parallel
     const [github, leetcode, codeforces, gfg, codechef, code360] =
       await Promise.all([
         fetchGithubProfile(userInfoData.links.github),
@@ -163,76 +243,109 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
         fetchCode360Profile(userInfoData.links.code360),
       ]);
 
-    console.log(gfg, codechef, code360, github, leetcode, codeforces);
+   
 
-    // Calculate derived metrics with proper null checks
+    // Extract platform-specific problem counts
+    const leetcodeEasy = leetcode?.easySolved || 0;
+    const leetcodeMedium = leetcode?.mediumSolved || 0;
+    const leetcodeHard = leetcode?.hardSolved || 0;
+    const leetcodeTotal = leetcode?.totalSolved || 0;
+
+    const gfgEasy = Object.keys(gfg?.submissions?.Easy || {}).length;
+    const gfgMedium = Object.keys(gfg?.submissions?.Medium || {}).length;
+    const gfgHard = Object.keys(gfg?.submissions?.Hard || {}).length;
+    const gfgTotal = gfg?.userInfo?.total_problems_solved || 0;
+
+    const code360Easy = code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Easy')?.count || 0;
+    const code360Medium = code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Moderate')?.count || 0;
+    const code360Hard = code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Hard')?.count || 0;
+    const code360Total = code360?.data?.dsa_domain_data?.problem_count_data?.total_count || 0;
+
+    // Calculate aggregate totals
+    const totalEasy = leetcodeEasy + gfgEasy + code360Easy;
+    const totalMedium = leetcodeMedium + gfgMedium + code360Medium;
+    const totalHard = leetcodeHard + gfgHard + code360Hard;
+    const totalDSA = leetcodeTotal + gfgTotal + code360Total;
+
+    // Calculate derived metrics
     const totalProblemsAllPlatforms = 
-      (leetcode?.totalSolved || 0) +
-      (gfg?.userInfo?.total_problems_solved || 0) +
+      totalDSA +
       (codeforces?.solvedCount || 0) +
-      (codechef?.problemsSolved ? parseInt(codechef.problemsSolved) : 0) +
-      (code360?.data?.dsa_domain_data?.problem_count_data?.total_count || 0);
+      (codechef?.problemsSolved ? parseInt(codechef.problemsSolved) : 0);
 
     const totalContests = 
       (leetcode?.contest?.attended || 0) +
-      (codechef?.contestsParticipated || 0);
+      (codechef?.contestsParticipated || 0) +
+      (codeforces?.contests?.total || 0);
 
-    // Enhanced structured response
-    const enhancedProfile = {
-      // Profile Information
+    const totalActiveDays = 
+      (leetcode?.calendar?.totalActiveDays || 0) +
+      (github?.activity?.recentActiveDays || 0);
+
+    const maxStreak = Math.max(
+      gfg?.userInfo?.pod_solved_longest_streak || 0,
+      leetcode?.calendar?.streak || 0
+    );
+
+    const currentStreak = leetcode?.calendar?.streak || 0;
+
+    // Merge topic analysis from all platforms
+    const mergedTopics = mergeTopicAnalysis(
+      gfg?.submissions || {},
+      leetcode?.topicAnalysis || {},
+      codeforces?.topicAnalysis || {}
+    );
+
+    // Build response matching EnhancedProfileData interface
+    const enhancedProfile: EnhancedProfileData = {
       profile: {
-        name: code360?.data?.name || github?.name || "Ramcharan Rajpurohit",
-        username: "ramcharanrajpurohit",
-        bio: github?.bio || code360?.data?.about || "",
-        avatar: github?.avatar || code360?.data?.image || "",
-        location: leetcode?.country || "India",
-        institute: code360?.data?.college || "Indian Institute of Technology, Jodhpur",
-        graduationYear: code360?.data?.graduation_year || 2027,
-        isVerified: false,
-        isPublic: true,
-        profileViews: code360?.data?.profile_view_count || 0,
-        followers: github?.followers || 0,
-        following: code360?.data?.following_count || 0,
+        name: code360?.data?.name || github?.name || userData?.username || null,
+        username: username,
+        bio: github?.bio || code360?.data?.about || null,
+        avatar: github?.avatar || code360?.data?.image || null,
+        location: github?.location || leetcode?.country || codeforces?.country || null,
+        institute: code360?.data?.college || null,
+        graduationYear: code360?.data?.graduation_year || null,
         lastRefresh: new Date().toISOString().split('T')[0],
-        joinedDate: gfg?.userInfo?.created_date || "2025-02-06"
+        portfolio: github?.blog || userInfoData?.portfolio || "",
+        phone: userInfoData?.phone || "",
+        email: userData?.email || ""
       },
 
-      // Overview Statistics
       overview: {
         totalQuestions: totalProblemsAllPlatforms,
-        totalActiveDays: 84, // You'll need to track this from actual activity
+        totalActiveDays: totalActiveDays,
         totalContests: totalContests,
-        maxStreak: gfg?.userInfo?.pod_solved_longest_streak || 0,
-        currentStreak: 0, // You'll need to calculate this from recent activity
-        totalSubmissions: totalProblemsAllPlatforms * 1.5, // Approximation
-        globalRank: {
-          score: gfg?.userInfo?.score || 0,
-          position: gfg?.userInfo?.institute_rank || null
-        }
+        maxStreak: maxStreak,
+        currentStreak: currentStreak
       },
 
-      // Activity Calendar (placeholder - you'll need to implement date tracking)
-      // activityCalendar: {
-      //   year: 2025,
-      //   data: generateActivityCalendar(gfg?.submissions)
-      // },
-       activityCalendar: {
-        year: 2025,
-        data: []
-      },
-
-
-      // Problems Solved by Category
       problemsSolved: {
-        fundamentals: {
-          cfg: 1,
-          total: 1
-        },
         dsa: {
-          easy: (leetcode?.easySolved || 0) + (Object.keys(gfg?.submissions?.Easy || {}).length) + (code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Easy')?.count || 0),
-          medium: (leetcode?.mediumSolved || 0) + (Object.keys(gfg?.submissions?.Medium || {}).length) + (code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Moderate')?.count || 0),
-          hard: (leetcode?.hardSolved || 0) + (Object.keys(gfg?.submissions?.Hard || {}).length) + (code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Hard')?.count || 0),
-          total: totalProblemsAllPlatforms
+          leetcode: {
+            easy: leetcodeEasy,
+            medium: leetcodeMedium,
+            hard: leetcodeHard,
+            total: leetcodeTotal
+          },
+          code360: {
+            easy: code360Easy,
+            medium: code360Medium,
+            hard: code360Hard,
+            total: code360Total
+          },
+          gfg: {
+            easy: gfgEasy,
+            medium: gfgMedium,
+            hard: gfgHard,
+            total: gfgTotal
+          },
+          total: {
+            easy: totalEasy,
+            medium: totalMedium,
+            hard: totalHard,
+            overall: totalDSA
+          }
         },
         competitiveProgramming: {
           codechef: codechef?.problemsSolved ? parseInt(codechef.problemsSolved) : 0,
@@ -241,154 +354,67 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
         }
       },
 
-      // Platform Details
       platforms: {
         leetcode: {
           name: "LeetCode",
-          handle: leetcode?.name || "",
-          rank: leetcode?.rank || 0,
+          handle: leetcode?.name || null,
           rating: leetcode?.contest?.rating || null,
-          maxRating: null,
+          maxRating: leetcode?.contest?.rating || null,
           totalSolved: leetcode?.totalSolved || 0,
-          easySolved: leetcode?.easySolved || 0,
-          mediumSolved: leetcode?.mediumSolved || 0,
-          hardSolved: leetcode?.hardSolved || 0,
-          contestsAttended: leetcode?.contest?.attended || 0,
-          contestRating: leetcode?.contest?.rating || 0,
-          globalRanking: leetcode?.contest?.globalRanking || 0,
-          topPercentage: leetcode?.contest?.topPercentage || 0,
-          badges: [],
-          recentSubmissions: []
+          rank: leetcode?.rank || null,
+          url: userInfoData.links.leetcode
         },
         codeforces: {
           name: "Codeforces",
-          handle: codeforces?.handle || "",
-          rating: codeforces?.rating || 0,
-          maxRating: codeforces?.maxRating || 0,
-          rank: codeforces?.rank || "unrated",
+          handle: codeforces?.handle || null,
+          rating: codeforces?.rating || null,
+          maxRating: codeforces?.maxRating || null,
           totalSolved: codeforces?.solvedCount || 0,
-          contestsAttended: 0,
-          badges: [],
-          recentSubmissions: []
+          rank: codeforces?.rank || null,
+          url: userInfoData.links.codeforces
         },
         codechef: {
           name: "CodeChef",
           handle: codechef?.handle || "",
-          rating: codechef?.rating ? parseInt(codechef.rating.replace(/[^\d]/g, '')) : 0,
-          maxRating: codechef?.maxRating ? parseInt(codechef.maxRating) : 0,
-          stars: codechef?.stars || "",
+          rating: Number(codechef?.rating),
+          maxRating: Number(codechef?.maxRating),
           totalSolved: codechef?.problemsSolved ? parseInt(codechef.problemsSolved) : 0,
-          contestsAttended: codechef?.contestsParticipated || 0,
-          badges: [],
-          recentSubmissions: []
+          rank: codechef?.stars,
+          url: userInfoData.links.codechef
         },
         geeksforgeeks: {
           name: "GeeksforGeeks",
-          handle: gfg?.userInfo?.name || "",
-          score: gfg?.userInfo?.score || 0,
-          monthlyScore: gfg?.userInfo?.monthly_score || 0,
+          handle: gfg?.userInfo?.name || null,
+          rating: gfg?.userInfo?.score || null,
+          maxRating: undefined,
           totalSolved: gfg?.userInfo?.total_problems_solved || 0,
-          instituteRank: gfg?.userInfo?.institute_rank || 0,
-          longestStreak: gfg?.userInfo?.pod_solved_longest_streak || 0,
-          globalLongestStreak: gfg?.userInfo?.pod_solved_global_longest_streak || 0,
-          difficulty: {
-            easy: Object.keys(gfg?.submissions?.Easy || {}).length,
-            medium: Object.keys(gfg?.submissions?.Medium || {}).length,
-            hard: Object.keys(gfg?.submissions?.Hard || {}).length,
-            basic: Object.keys(gfg?.submissions?.Basic || {}).length
-          },
-          badges: [],
-          recentSubmissions: []
+          rank: gfg?.userInfo?.institute_rank || null,
+          url: userInfoData.links.gfg
         },
         code360: {
-          name: "Code360 (Coding Ninjas)",
-          handle: code360?.data?.name || "",
+          name: "Code360",
+          handle: code360?.data?.name || null,
+          rating: code360?.data?.user_exp || null,
+          maxRating: undefined,
           totalSolved: code360?.data?.dsa_domain_data?.problem_count_data?.total_count || 0,
-          difficulty: {
-            easy: code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Easy')?.count || 0,
-            moderate: code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Moderate')?.count || 0,
-            hard: code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Hard')?.count || 0,
-            ninja: code360?.data?.dsa_domain_data?.problem_count_data?.difficulty_data?.find((d: any) => d.level === 'Ninja')?.count || 0
-          },
-          userLevel: code360?.data?.user_level || 0,
-          userLevelName: code360?.data?.user_level_name || "",
-          userExp: code360?.data?.user_exp || 0,
-          badges: code360?.data?.dsa_domain_data?.badges_hash || {},
-          certificates: [],
-          recentSubmissions: []
+          rank: code360?.data?.user_level_name || null,
+          url: userInfoData.links.code360
         },
         github: {
           name: "GitHub",
-          handle: github?.name || "",
-          followers: github?.followers || 0,
-          repos: github?.repos || 0,
-          contributions: null,
-          languages: [],
-          recentActivity: []
+          handle: github?.name || null,
+          rating: github?.stats?.totalStars || undefined,
+          maxRating: undefined,
+          totalSolved: github?.repos || 0,
+          rank: undefined,
+          url: userInfoData.links.github
         }
       },
 
-      // Contest Rankings
-      contestRankings: {
-        leetcode: {
-          rating: Math.floor(leetcode?.contest?.rating || 0),
-          maxRating: Math.floor(leetcode?.contest?.rating * 1.05 || 0), // Approximation
-          globalRank: leetcode?.contest?.globalRanking || 0,
-          attended: leetcode?.contest?.attended || 0
-        },
-        codechef: {
-          rating: codechef?.rating ? parseInt(codechef.rating.replace(/[^\d]/g, '')) : 0,
-          maxRating: codechef?.maxRating ? parseInt(codechef.maxRating) : 0,
-          globalRank: null,
-          attended: codechef?.contestsParticipated || 0
-        },
-        codeforces: {
-          rating: codeforces?.rating || 0,
-          maxRating: codeforces?.maxRating || 0,
-          rank: codeforces?.rank || "Unrated",
-          attended: 0
-        }
-      },
-
-      // Awards
       awards: generateAwards({ github, leetcode, codeforces, gfg, codechef, code360 }),
 
-      // Topic Analysis
-      topicAnalysis: extractTopicAnalysis(gfg?.submissions || {}),
-
-      // Recent Activity (placeholder - you'll need to implement this)
-      recentActivity: [
-        {
-          platform: "GeeksforGeeks",
-          problemName: "Latest Problem",
-          difficulty: "Medium",
-          status: "Solved",
-          language: "cpp",
-          timestamp: new Date().toISOString()
-        }
-      ],
-
-      // Skills
-      skills: {
-        languages: ["C++", "Python", "JavaScript"],
-        technologies: ["React", "Node.js", "MongoDB", "Express"],
-        algorithms: ["Dynamic Programming", "Graph Algorithms", "Tree Traversal"],
-        concepts: ["Data Structures", "Problem Solving", "Full Stack Development"]
-      },
-
-      // Preferences
-      preferences: {
-        defaultLanguage: "cpp",
-        publicProfile: true,
-        showEmail: false,
-        notifications: {
-          contests: true,
-          achievements: true,
-          weeklyProgress: true
-        }
-      }
+      topicAnalysis: mergedTopics
     };
-    console.log("🚀 Enhanced Profile Data to frontend:", enhancedProfile);
     return res.json(enhancedProfile);
 
   } catch (error) {

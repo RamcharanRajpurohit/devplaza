@@ -21,6 +21,28 @@ export const fetchLeetcodeProfile = async (username: string) => {
                 count
               }
             }
+            userCalendar {
+              streak
+              totalActiveDays
+              activeYears
+            }
+            tagProblemCounts {
+              advanced {
+                tagName
+                tagSlug
+                problemsSolved
+              }
+              intermediate {
+                tagName
+                tagSlug
+                problemsSolved
+              }
+              fundamental {
+                tagName
+                tagSlug
+                problemsSolved
+              }
+            }
           }
           userContestRanking(username: $username) {
             attendedContestsCount
@@ -28,6 +50,12 @@ export const fetchLeetcodeProfile = async (username: string) => {
             globalRanking
             totalParticipants
             topPercentage
+          }
+          recentAcSubmissionList(username: $username, limit: 10) {
+            id
+            title
+            titleSlug
+            timestamp
           }
         }`,
       variables: { username },
@@ -49,6 +77,17 @@ export const fetchLeetcodeProfile = async (username: string) => {
     const getCount = (level: string) =>
       acStats.find((x: any) => x.difficulty === level)?.count || 0;
 
+    // Extract topic analysis from tagProblemCounts
+    const topicAnalysis: { [key: string]: number } = {};
+    
+    ['advanced', 'intermediate', 'fundamental'].forEach(level => {
+      user.tagProblemCounts?.[level]?.forEach((tag: any) => {
+        if (tag.problemsSolved > 0) {
+          topicAnalysis[tag.tagSlug] = (topicAnalysis[tag.tagSlug] || 0) + tag.problemsSolved;
+        }
+      });
+    });
+
     return {
       platform: "LeetCode",
       name: user.profile.realName,
@@ -67,6 +106,13 @@ export const fetchLeetcodeProfile = async (username: string) => {
         globalRanking: contest?.globalRanking || 0,
         topPercentage: contest?.topPercentage || 0,
       },
+      calendar: {
+        streak: user.userCalendar?.streak || 0,
+        totalActiveDays: user.userCalendar?.totalActiveDays || 0,
+        activeYears: user.userCalendar?.activeYears || [],
+      },
+      topicAnalysis: topicAnalysis,
+      recentSubmissions: data.recentAcSubmissionList || [],
     };
   } catch (err: any) {
     console.error("LeetCode fetch error:", err.message);

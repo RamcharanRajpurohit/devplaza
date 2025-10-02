@@ -1,10 +1,19 @@
-import app from './app';
-import { Request, Response } from 'express';
-import userInfoRoutes from './routes/userInfo';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
+import app from './app';  // your existing app.ts
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello World!');
+const port = process.env.PORT || 5000;
+
+// Correct paths to certs in project root
+const keyPath = path.join(__dirname, '..', 'cert', 'key.pem');
+const certPath = path.join(__dirname, '..', 'cert', 'cert.pem');
+
+const httpsOptions = {
+  key: fs.readFileSync(keyPath),
+  cert: fs.readFileSync(certPath),
+};
+
+https.createServer(httpsOptions, app).listen(port, () => {
+  console.log(`🚀 Server running on https://localhost:${port}`);
 });
-
-// Add user info routes
-app.use('/api/user/info', userInfoRoutes);

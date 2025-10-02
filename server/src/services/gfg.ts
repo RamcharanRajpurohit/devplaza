@@ -12,7 +12,6 @@ export const fetchGFGUserData = async (username: string) => {
     const parsed = JSON.parse(rawJson);
     const userInfo = parsed.props?.pageProps?.userInfo;
     const submissions = parsed.props?.pageProps?.userSubmissionsInfo;
-
     return { userInfo, submissions };
   } catch (err:any) {
     console.error("Failed to fetch GFG data:", err.message);
