@@ -69,6 +69,7 @@ export const verifyOtp = async (req: VerifyOTPRequest, res: Response): Promise<R
         id: checkUserPresent._id,
         email: checkUserPresent.email,
         username: checkUserPresent.username,
+        isProfileCompleted:false,
       }
     });
   } catch (error: any) {

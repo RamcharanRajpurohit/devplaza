@@ -4,18 +4,21 @@ interface UserData {
   id?: string;
   email?: string;
   username?: string;
+  profileCompleted?:boolean;
   // Add other user properties as needed
 }
 
 interface AuthContextType {
   user: UserData | null;
   isAuthenticated: boolean;
+  isProfileCompleted:boolean;
   login: (token: string, userData: UserData) => void;
   logout: () => void;
   updateUser: (userData: UserData) => void;
   setEmail: (email: string) => void;
   refreshToken: () => Promise<void>;
   isLoading: boolean; // Add loading state
+  setIsProfileComplet:()=>void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -23,11 +26,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isProfileCompleted, setIsProfileCompleted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Add loading state
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // Prevent multiple refresh calls
 
   const refreshToken = async () => {
-    // Prevent multiple simultaneous refresh attempts
     if (isRefreshing) {
       return;
     }
@@ -62,7 +65,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err) {
       console.error("❌ Refresh token failed:", err);
-      // Clear any existing auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
@@ -74,11 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check for stored token and user data on mount
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      
       if (token && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -130,6 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       setIsAuthenticated(true);
       setIsLoading(false);
+      setIsProfileCompleted(userData?.profileCompleted ?? false)
       console.log('✅ User logged in successfully');
     } catch (error) {
       console.error('❌ Error storing auth data:', error);
@@ -137,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setEmail = (email: string) => {
+    localStorage.setItem('email',email);
     if (user) {
       const updatedUser = { ...user, email };
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -153,7 +155,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
     console.log('✅ User logged out');
   };
+  const setIsProfileComplet=()=>{
+       setIsProfileCompleted(true);
 
+  }
   const updateUser = (userData: UserData) => {
     try {
       localStorage.setItem('user', JSON.stringify(userData));
@@ -173,7 +178,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateUser,
       setEmail,
       refreshToken,
-      isLoading 
+      isLoading,
+      isProfileCompleted,
+      setIsProfileComplet
     }}>
       {children}
     </AuthContext.Provider>

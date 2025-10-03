@@ -1,40 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Mail, RefreshCw, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../services/authState';
-import { useSignup } from '../../context/SignupContext';
+
 import { useAuth } from '../../context/AuthContext';
 
 export default function DevPlazaOTP() {
-   const { setSignupData } = useSignup();
-  const { signupData, clearSignupData } = useSignup();
+  
   const navigate = useNavigate();
   const{ login }= useAuth();
-   const { isAuthenticated } = useAuth();
+   const { isAuthenticated ,user} = useAuth();
   
       useEffect(() => {
       if (isAuthenticated) {
-          // If user is authenticated, redirect to dashboard
           window.location.href = '/dashboard';
           }
       }, [isAuthenticated]);
 
-  // move this state above the redirect effect
+ 
   const [verificationSuccess, setVerificationSuccess] = useState(false);
-
-  // Redirect if no email in state, but only when NOT in the middle of successful verification
-  // useEffect(() => {
-  //   const token = localStorage.getItem('token');
-
-  //   // if there's a token we should not redirect to signup (prevents flash when signupData is cleared)
-  //   if (!signupData?.email && !verificationSuccess && !token) {
-  //     console.log('⚠️ No signup email in state and no token found, redirecting to signup');
-  //     navigate('/auth/signup', { replace: true });
-  //   } else if (!signupData?.email && token) {
-  //     console.log('ℹ️ signupData missing but token present — skipping redirect');
-  //   }
-  // }, [signupData, navigate, verificationSuccess]);
-
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -42,10 +25,9 @@ export default function DevPlazaOTP() {
   const [canResend, setCanResend] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const loginEmail= useAuthStore((state) => state.email);
+  const email = localStorage.getItem('email');
 
   useEffect(() => {
-    // Focus first input on mount
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
@@ -62,16 +44,11 @@ export default function DevPlazaOTP() {
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
-
-    // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    setError(''); // Clear error when user types
-
-    // Move to next input
+    setError(''); 
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -95,17 +72,12 @@ export default function DevPlazaOTP() {
     }
 
     setOtp(newOtp);
-
-    // Focus next empty input or last input
     const nextIndex = Math.min(pastedData.length, 5);
     inputRefs.current[nextIndex]?.focus();
   };
 
   const handleSubmit = async () => {
-    setSignupData({ 
-      email: loginEmail,
-    });
-    console.log('🔄 Submitting OTP verification:', { email: signupData?.email  });
+    console.log(user?.email);
     const otpCode = otp.join('');
     if (otpCode.length !== 6) {
       setError('Please enter a valid 6-digit OTP.');
@@ -123,9 +95,9 @@ export default function DevPlazaOTP() {
         },
         body: JSON.stringify({
           otp: otpCode,
-          email: signupData?.email
+          email:email
         }),
-        credentials: 'include' // Add this to handle cookies if needed
+        credentials: 'include' 
       });
 
       const data = await response.json();
@@ -133,32 +105,13 @@ export default function DevPlazaOTP() {
       if (response.ok && data.success) {
         console.log('✅ OTP verification successful');
         if (data.token) {
-          // store token first
           localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(signupData?.email));
+          localStorage.setItem('user', JSON.stringify( user?.email));
           setVerificationSuccess(true);
           console.log("token recived", data.token)
           login(data.token, data.user);
-          
-
-          // show a short loader/transition to avoid abrupt flash of other routes/components
-          // navigate after a short delay while keeping this component mounted so redirect checks
-          // don't see cleared signupData prematurely.
           setTimeout(() => {
-            try {
-              // clear signup context AFTER navigation to avoid triggering signup redirect
-              navigate('/complete-profile', { replace: true, state: { fromOTP: true } });
-            } finally {
-              // clear signup data slightly after navigation to keep this component stable
-              setTimeout(() => {
-                try {
-                  clearSignupData();
-                  console.log('🔄 Cleared signup context after navigation');
-                } catch (err) {
-                  console.error('❌ Failed to clear signup context:', err);
-                }
-              }, 50);
-            }
+              navigate('/complete-profile', { replace: true, state: { fromOTP: true } });        
           }, 900); // ~900ms transition to show success + loader
         } else {
           throw new Error('No token received from server');
@@ -176,7 +129,7 @@ export default function DevPlazaOTP() {
   };
 
   const handleResend = async () => {
-    console.log('🔄 Resending OTP to:', signupData?.email);
+    console.log('🔄 Resending OTP to:', user?.email);
     setIsResending(true);
     setCanResend(false);
     setCountdown(60);
@@ -186,7 +139,7 @@ export default function DevPlazaOTP() {
       const response = await fetch('https://localhost:5000/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signupData?.email }),
+        body: JSON.stringify({ email: user?.email }),
       });
 
       const data = await response.json();
@@ -235,7 +188,7 @@ export default function DevPlazaOTP() {
           </h2>
           <p className="text-gray-400 text-sm">
             We've sent a 6-digit verification code to{' '}
-            <span className="text-red-400 font-medium">{signupData?.email}</span>
+            <span className="text-red-400 font-medium">{user?.email}</span>
           </p>
         </div>
 

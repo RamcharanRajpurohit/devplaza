@@ -18,7 +18,7 @@ import PlatformCard from './platformcard';
 import DifficultyBar from './diifBar';
 
 const CodingProfileDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout,setIsProfileComplet } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [profileData, setProfileData] = useState<EnhancedProfileData | null>(null);
@@ -46,6 +46,7 @@ const CodingProfileDashboard: React.FC = () => {
 
 
       setProfileData(response.data);
+      setIsProfileComplet();
       console.log(response.data);
       setError('');
     } catch (err: any) {

@@ -5,18 +5,18 @@ import type { CredentialResponse } from "@react-oauth/google";
 import axios from "axios";
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
-import { useAuthStore } from '../../services/authState';
+
 import { ArrowLeft } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE || "https://localhost:5000";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login,setEmail } = useAuth();
    const { isAuthenticated } = useAuth();
   
       useEffect(() => {
@@ -50,7 +50,7 @@ const Login: React.FC = () => {
       console.error('❌ Login error:', data);
 
       if (status === 403 && data?.code === "USER_NOT_VERIFIED") {
-        useAuthStore.getState().setEmail(email);
+        setEmail(email);
         console.log('🚀 Redirecting to OTP verification for:', email);
         navigate('/auth/otp');
       } else {
@@ -107,7 +107,7 @@ const Login: React.FC = () => {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setmail(e.target.value)}
               className="w-full p-3 bg-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-600 focus:outline-none transition-all duration-200"
               placeholder="you@example.com"
             />

@@ -12,7 +12,6 @@ import Settings from './components/dashboard/Settings';
 import NotFound from './components/common/NotFound';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import DevPlazaOTP from './components/auth/otp';
-import { SignupProvider } from './context/SignupContext';
 import ShowUser from './components/user/showUser';
 import UserInfoForm from './components/auth/UserInfoForm';
 import DevPlazaLanding from './components/landing/main';
@@ -38,11 +37,11 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
         <ToastProvider>
-          <SignupProvider>
+        
             <BrowserRouter>
               <AuthRoutes />
             </BrowserRouter>
-          </SignupProvider>
+          
         </ToastProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

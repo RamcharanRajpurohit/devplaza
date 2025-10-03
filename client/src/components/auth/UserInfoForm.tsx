@@ -60,19 +60,19 @@ const UserInfoForm: React.FC = () => {
       company: '',
     }
   });
-  
+
   const [skillInput, setSkillInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState<'basic' | 'contact' | 'academic' | 'platforms' | 'skills' | 'experience'>('basic');
-  
+
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  useEffect(()=>{
-       if(isAuthenticated){
-        navigate('/');
-       }
-  },[isAuthenticated])
+  const { isProfileCompleted, isAuthenticated,setIsProfileComplet } = useAuth();
+  useEffect(() => {
+    if (isAuthenticated && isProfileCompleted) {
+      navigate('/');
+    }
+  }, [isAuthenticated, isProfileCompleted])
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -99,6 +99,7 @@ const UserInfoForm: React.FC = () => {
 
       if (response.ok) {
         navigate('/dashboard');
+        setIsProfileComplet();
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to save profile information');
@@ -157,7 +158,7 @@ const UserInfoForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4 py-8">
       <div className="max-w-4xl w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg shadow-xl overflow-hidden">
-        
+
         {/* Header */}
         <div className="p-6 border-b border-red-900/30">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
@@ -173,11 +174,10 @@ const UserInfoForm: React.FC = () => {
               key={section.id}
               type="button"
               onClick={() => setActiveSection(section.id as any)}
-              className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium transition-all ${
-                activeSection === section.id
+              className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium transition-all ${activeSection === section.id
                   ? 'bg-red-900/30 text-red-200 border-b-2 border-red-500'
                   : 'text-red-300/60 hover:text-red-200 hover:bg-red-900/10'
-              }`}
+                }`}
             >
               <span className="mr-2">{section.icon}</span>
               {section.label}
@@ -194,7 +194,7 @@ const UserInfoForm: React.FC = () => {
         <form onSubmit={handleSubmit}>
           {/* Form Content */}
           <div className="p-6 max-h-[500px] overflow-y-auto">
-            
+
             {/* Basic Info Section */}
             {activeSection === 'basic' && (
               <div className="space-y-4 animate-in fade-in duration-300">
@@ -202,7 +202,7 @@ const UserInfoForm: React.FC = () => {
                   type="text"
                   placeholder="Full Name *"
                   value={formData.fullName}
-                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   required
                 />
@@ -210,7 +210,7 @@ const UserInfoForm: React.FC = () => {
                 <textarea
                   placeholder="Bio / About yourself"
                   value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 h-24 focus:outline-none focus:border-red-500 resize-none text-sm"
                 />
 
@@ -218,7 +218,7 @@ const UserInfoForm: React.FC = () => {
                   type="text"
                   placeholder="Location (City, Country)"
                   value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
               </div>
@@ -231,7 +231,7 @@ const UserInfoForm: React.FC = () => {
                   type="email"
                   placeholder="Email Address"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
 
@@ -239,7 +239,7 @@ const UserInfoForm: React.FC = () => {
                   type="tel"
                   placeholder="Phone Number"
                   value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
 
@@ -247,7 +247,7 @@ const UserInfoForm: React.FC = () => {
                   type="url"
                   placeholder="Portfolio Website URL"
                   value={formData.portfolio}
-                  onChange={(e) => setFormData({...formData, portfolio: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
               </div>
@@ -260,7 +260,7 @@ const UserInfoForm: React.FC = () => {
                   type="text"
                   placeholder="Institute / University Name"
                   value={formData.institute}
-                  onChange={(e) => setFormData({...formData, institute: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, institute: e.target.value })}
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
 
@@ -268,7 +268,7 @@ const UserInfoForm: React.FC = () => {
                   type="number"
                   placeholder="Graduation Year (e.g., 2025)"
                   value={formData.graduationYear}
-                  onChange={(e) => setFormData({...formData, graduationYear: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
                   min="1950"
                   max="2050"
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
@@ -287,7 +287,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('github', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="LinkedIn Username"
@@ -311,7 +311,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('instagram', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="LeetCode Username"
@@ -319,7 +319,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('leetcode', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="CodeForces Username"
@@ -327,7 +327,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('codeforces', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="CodeChef Username"
@@ -343,7 +343,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('gfg', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="HackerRank Username"
@@ -351,7 +351,7 @@ const UserInfoForm: React.FC = () => {
                     onChange={(e) => handleLinksChange('hackerrank', e.target.value)}
                     className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                   />
-                  
+
                   <input
                     type="text"
                     placeholder="Code360 Username"
@@ -423,7 +423,7 @@ const UserInfoForm: React.FC = () => {
                   min="0"
                   className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
                 />
-                
+
                 <input
                   type="text"
                   placeholder="Current Role / Position"

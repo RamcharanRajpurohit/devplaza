@@ -4,7 +4,7 @@ import type { CredentialResponse } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 // import { useAuthStore } from '../../services/authState';
-import { useSignup } from '../../context/SignupContext';
+
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft } from "lucide-react";
 
@@ -15,8 +15,8 @@ export default function Signup() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setSignupData } = useSignup();
-   const { login } = useAuth();
+ 
+   const { login,setEmail} = useAuth();
     const { isAuthenticated } = useAuth();
    
        useEffect(() => {
@@ -38,18 +38,10 @@ export default function Signup() {
     
     try {
       const res = await axios.post(`${API}/api/auth/signup`, formData);
-      console.log('✅ Signup successful:', res.data);
-      
-      // if (res.data.tempToken) {
-        setSignupData({ 
-          email: formData.email,
-        //   tempToken: res.data.tempToken
-        });
-        setMessage(res.data.message || "Verification code sent to your email");
-        navigate('/auth/otp', { replace: true }); // Use replace to prevent back navigation
-      // } else {
-      //   throw new Error('No temporary token received');
-      // }
+      console.log('✅ Signup successful:', res.data);  
+      setEmail(formData.email);
+      setMessage(res.data.message || "Verification code sent to your email");
+      navigate('/auth/otp', { replace: true }); // Use replace to prevent back navigation
     } catch (err: any) {
       console.error('❌ Signup error:', err);
       if (err.response?.data?.message) {

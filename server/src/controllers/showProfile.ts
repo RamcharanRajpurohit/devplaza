@@ -212,9 +212,13 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
     const userInfoData = await UserInfo.findOne({ user: userData?._id });
     
 
-    if (!userData || !userInfoData) {
+    if (!userData) {
       console.warn("⚠️ User not found:", username);
       return res.status(404).json({ error: "User not found" });
+    }
+    if (!userInfoData) {
+      console.warn("⚠️ User not found:", username);
+      return res.status(404).json({ error: "Please complete your profile links first." });
     }
 
     // Ensure links exist

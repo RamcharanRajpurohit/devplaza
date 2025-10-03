@@ -141,14 +141,15 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Get user info by userId (public)
-router.get('/:userId', async (req, res) => {
+router.get('/:userId',authenticateToken, async (req, res) => {
   console.log('🔍 Fetching user info for userId:', req.params.userId);
   try {
     const userInfo = await UserInfo.findOne({ user: req.params.userId })
       .populate('user', 'email username');
 
+    
     if (!userInfo) {
-      return res.status(404).json({ success: false, message: 'User info not found' });
+      return res.status(404).json({ success: false, message: 'Please complete your profile links first.' });
     }
    
     res.status(200).json({ success: true, data: userInfo });
