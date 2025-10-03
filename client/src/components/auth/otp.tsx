@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function DevPlazaOTP() {
-  
+  const path  =import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
   const{ login }= useAuth();
    const { isAuthenticated ,user} = useAuth();
@@ -88,7 +88,7 @@ export default function DevPlazaOTP() {
     setError('');
 
     try {
-      const response = await fetch('https://localhost:5000/api/auth/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export default function DevPlazaOTP() {
     setError('');
 
     try {
-      const response = await fetch('https://localhost:5000/api/auth/resend-otp', {
+      const response = await fetch(path+'/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user?.email }),

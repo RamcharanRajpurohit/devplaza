@@ -125,6 +125,7 @@ const CodingProfileDashboard = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const path =import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -137,7 +138,7 @@ const CodingProfileDashboard = () => {
       try {
         setLoading(true);
         console.log(`🔍 Fetching public profile for username: ${username}`);
-        const response = await fetch(`https://localhost:5000/api/profile/${username}`);
+        const response = await fetch(path+`/api/profile/${username}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch profile');

@@ -29,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isProfileCompleted, setIsProfileCompleted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Add loading state
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // Prevent multiple refresh calls
+  const path =import.meta.env.VITE_BACKEND_URL;
 
   const refreshToken = async () => {
     if (isRefreshing) {
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsRefreshing(true);
     
     try {
-      const response = await fetch("https://localhost:5000/api/auth/refresh-token", {
+      const response = await fetch(path+"/api/auth/refresh-token", {
         method: "POST",
         credentials: "include", // ✅ include cookies
       });

@@ -8,7 +8,7 @@ import axios from "axios";
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft } from "lucide-react";
 
-const API = import.meta.env.VITE_API_BASE || "https://localhost:5000";
+const API = import.meta.env.VITE_BACKEND_URL;
 
 export default function Signup() {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });

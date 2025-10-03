@@ -3,8 +3,8 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
-
-const API_URL = 'https://localhost:5000/api';
+const path =import.meta.env.VITE_BACKEND_URL;
+const API_URL = path+'/api';
 
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];

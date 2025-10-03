@@ -65,7 +65,7 @@ const UserInfoForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState<'basic' | 'contact' | 'academic' | 'platforms' | 'skills' | 'experience'>('basic');
-
+  const path =import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
   const { isProfileCompleted, isAuthenticated,setIsProfileComplet } = useAuth();
   useEffect(() => {
@@ -88,7 +88,7 @@ const UserInfoForm: React.FC = () => {
     };
 
     try {
-      const response = await fetch('https://localhost:5000/api/user/info', {
+      const response = await fetch(path+'/api/user/info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

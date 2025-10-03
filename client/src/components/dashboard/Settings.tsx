@@ -5,7 +5,7 @@ import {
   CheckCircle, Shield, RefreshCw, Link,ArrowLeft
 } from 'lucide-react';
 
-const API = "https://localhost:5000";
+const API = import.meta.env.VITE_BACKEND_URL;
 
 interface UserInfoFormData {
   fullName: string;

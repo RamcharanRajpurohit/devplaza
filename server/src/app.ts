@@ -4,7 +4,6 @@ import express, { Request, Response } from 'express';
 import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import userInfoRoutes from './routes/userInfo';
-import { UserTokens } from './models/userTokens';
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const mongoose = require('mongoose'); // Keep CommonJS require
@@ -26,7 +25,7 @@ app.use(express.json());
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: ["https://localhost:5173"],
+  origin: [process.env.FRONTEND_URL],
   credentials: true
 }));
 app.use(helmet());
