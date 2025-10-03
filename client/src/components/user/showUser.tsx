@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  User, 
   Trophy, 
   Target, 
   Code, 
-  GitBranch, 
   Star, 
   Calendar,
   TrendingUp,
@@ -13,19 +11,16 @@ import {
   Brain,
   Zap,
   ChevronRight,
-  Eye,
-  Globe,
   MapPin,
   BookOpen,
-  Timer,
   Activity,
-  Shield,
+  
   BarChart3,
   Medal,
-  CheckCircle,
+
   AlertCircle,
   FireExtinguisher,
-  Users,
+ 
   ExternalLink,
 } from 'lucide-react';
 

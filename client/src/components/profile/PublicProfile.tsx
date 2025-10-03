@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams} from 'react-router-dom';
 import { profileService } from '../../services/api';
-import type { ProfileData } from '../../types/profile';
+import type { ProfileData as EnhancedProfileData} from '../../types/profile';
 import { 
  MapPin, Building, Eye, RefreshCw, Trophy, Star, 
    Code, Share2, Calendar, Users,
@@ -11,117 +11,11 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
 import { useToast } from '../../context/ToastContext';
 
-interface EnhancedProfileData {
-  profile: {
-    name: string;
-    username: string;
-    bio: string;
-    avatar: string;
-    location: string;
-    institute: string;
-    graduationYear: number;
-    isVerified: boolean;
-    isPublic: boolean;
-    profileViews: number;
-    followers: number;
-    following: number;
-    lastRefresh: string;
-    joinedDate: string;
-  };
-  overview: {
-    totalQuestions: number;
-    totalActiveDays: number;
-    totalContests: number;
-    maxStreak: number;
-    currentStreak: number;
-    totalSubmissions: number;
-    globalRank: {
-      score: number;
-      position: number;
-    };
-  };
-  problemsSolved: {
-    fundamentals: {
-      cfg: number;
-      total: number;
-    };
-    dsa: {
-      easy: number;
-      medium: number;
-      hard: number;
-      total: number;
-    };
-    competitiveProgramming: {
-      codechef: number;
-      codeforces: number;
-      total: number;
-    };
-  };
-  platforms: {
-    [key: string]: {
-      name: string;
-      handle: string;
-      rating?: number;
-      maxRating?: number;
-      rank?: string | number;
-      totalSolved: number;
-      easySolved?: number;
-      mediumSolved?: number;
-      hardSolved?: number;
-      contestsAttended?: number;
-      contestRating?: number;
-      globalRanking?: number;
-      topPercentage?: number;
-      score?: number;
-      monthlyScore?: number;
-      instituteRank?: number;
-      longestStreak?: number;
-      userLevel?: number;
-      userLevelName?: string;
-      userExp?: number;
-      followers?: number;
-      repos?: number;
-    };
-  };
-  contestRankings: {
-    [key: string]: {
-      rating: number;
-      maxRating?: number;
-      globalRank?: number;
-      rank?: string;
-      attended: number;
-    };
-  };
-  awards: Array<{
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    earnedDate: string;
-  }>;
-  topicAnalysis: {
-    [key: string]: number;
-  };
-  recentActivity: Array<{
-    platform: string;
-    problemName: string;
-    difficulty: string;
-    status: string;
-    language: string;
-    timestamp: string;
-  }>;
-  skills: {
-    languages: string[];
-    technologies: string[];
-    algorithms: string[];
-    concepts: string[];
-  };
-}
+
 
 const PublicProfile: React.FC = () => {
   const { username } = useParams();
-  const navigate = useNavigate();
+  
   const { showToast } = useToast();
   const [profileData, setProfileData] = useState<EnhancedProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -169,40 +63,40 @@ const PublicProfile: React.FC = () => {
     }
   };
 
-  const getProgressPercentage = (solved: number, total: number) => {
-    if (total === 0) return 0;
-    return Math.round((solved / total) * 100);
-  };
+  // const getProgressPercentage = (solved: number, total: number) => {
+  //   if (total === 0) return 0;
+  //   return Math.round((solved / total) * 100);
+  // };
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 70) return 'bg-gradient-to-r from-green-500 to-green-400';
-    if (percentage >= 50) return 'bg-gradient-to-r from-yellow-500 to-yellow-400';
-    return 'bg-gradient-to-r from-red-500 to-red-400';
-  };
+  // const getProgressColor = (percentage: number) => {
+  //   if (percentage >= 70) return 'bg-gradient-to-r from-green-500 to-green-400';
+  //   if (percentage >= 50) return 'bg-gradient-to-r from-yellow-500 to-yellow-400';
+  //   return 'bg-gradient-to-r from-red-500 to-red-400';
+  // };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case 'easy': return 'text-green-400';
-      case 'medium': return 'text-yellow-400';
-      case 'hard': return 'text-red-400';
-      default: return 'text-gray-400';
-    }
-  };
+  // const getDifficultyColor = (difficulty: string) => {
+  //   switch (difficulty.toLowerCase()) {
+  //     case 'easy': return 'text-green-400';
+  //     case 'medium': return 'text-yellow-400';
+  //     case 'hard': return 'text-red-400';
+  //     default: return 'text-gray-400';
+  //   }
+  // };
 
-  const getRatingColor = (rating: number) => {
-    if (rating >= 2100) return 'text-red-400';
-    if (rating >= 1900) return 'text-purple-400';
-    if (rating >= 1600) return 'text-blue-400';
-    if (rating >= 1400) return 'text-cyan-400';
-    if (rating >= 1200) return 'text-green-400';
-    return 'text-gray-400';
-  };
+  // const getRatingColor = (rating: number) => {
+  //   if (rating >= 2100) return 'text-red-400';
+  //   if (rating >= 1900) return 'text-purple-400';
+  //   if (rating >= 1600) return 'text-blue-400';
+  //   if (rating >= 1400) return 'text-cyan-400';
+  //   if (rating >= 1200) return 'text-green-400';
+  //   return 'text-gray-400';
+  // };
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorAlert message={error} />;
   if (!profileData) return <ErrorAlert message="Profile data not available" />;
 
-  const { profile, overview, problemsSolved, platforms, contestRankings, awards, topicAnalysis, recentActivity, skills } = profileData;
+  const { profile, overview, problemsSolved, platforms,awards, topicAnalysis, recentActivity, skills } = profileData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white p-6">
