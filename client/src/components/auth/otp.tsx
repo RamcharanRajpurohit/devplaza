@@ -88,7 +88,7 @@ export default function DevPlazaOTP() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const response = await fetch(path+'/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
