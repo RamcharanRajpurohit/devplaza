@@ -12,7 +12,7 @@ const connectDB = async () => {
 
   try {
     await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 10000, // 10 sec max wait
+      serverSelectionTimeoutMS: 30000, // 10 sec max wait
     });
     console.log("🟢 MongoDB connected to Atlas successfully!");
   } catch (err) {

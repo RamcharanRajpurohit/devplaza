@@ -9,13 +9,6 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 import helmet from 'helmet';
 import connectDB from './utils/connectDb';
-// yep, keep duplicate import as you had it
-
-connectDB()
-  .then(() => {
-    app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
-  })
-  .catch(err => console.error('MongoDB connection failed, not starting server:', err));
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -40,10 +33,18 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
 });
 
-// Error handling
+
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error' });
 });
+
+connectDB()
+  .then(() => {
+    app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection failed, not starting server:', err);
+  });
 
 export default app;
