@@ -7,7 +7,6 @@ import DevPlazaForgotPassword from './components/auth/forgot';
 import AuthPage from './components/auth/Login';
 import CodingProfileDashboard from './components/dashboard/profile';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import PublicProfile from './components/profile/PublicProfile';
 import Settings from './components/dashboard/Settings';
 import NotFound from './components/common/NotFound';
 import { GoogleOAuthProvider } from '@react-oauth/google';
