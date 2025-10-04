@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { profileService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -9,7 +9,8 @@ import {
   Code,
   Trophy,
   Share2,
-  Menu
+  Menu,
+  UserPlus
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
@@ -18,22 +19,29 @@ import PlatformCard from './platformcard';
 import DifficultyBar from './diifBar';
 
 const CodingProfileDashboard: React.FC = () => {
-  const { user, logout,setIsProfileComplet } = useAuth();
+  const { user, logout, setIsProfileComplet } = useAuth();
+  const { username: urlUsername } = useParams<{ username?: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [profileData, setProfileData] = useState<EnhancedProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Determine if viewing own profile or someone else's
+  const viewingUsername = urlUsername || user?.username;
+ const isOwnProfile = !!user && (!urlUsername || urlUsername === user.username);
+
+
   useEffect(() => {
     fetchProfileData();
-  }, []);
+  }, [viewingUsername]);
 
   const fetchProfileData = async () => {
-    if (!user?.username) {
-      console.log('Username is missing in user context');
+    if (!viewingUsername) {
+      console.log('Username is missing');
       setError('Username is missing');
       setLoading(false);
       setRefreshing(false);
@@ -41,20 +49,24 @@ const CodingProfileDashboard: React.FC = () => {
     }
     try {
       setRefreshing(true);
-      const response = await profileService.getPublicProfile(user.username);
-      console.log(response)
-
+      setProfileIncomplete(false);
+      const response = await profileService.getPublicProfile(viewingUsername);
+      console.log(response);
 
       setProfileData(response.data);
-      setIsProfileComplet();
+      if (isOwnProfile) {
+        setIsProfileComplet();
+      }
       console.log(response.data);
       setError('');
     } catch (err: any) {
-      console.log(err)
-      if (err.response.data.error == "Please complete your profile links first.") {
-        navigate('/complete-profile')
+      console.log(err);
+      if (err.response?.data?.error === "Please complete your profile links first.") {
+        setProfileIncomplete(true);
+        setError('');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load profile');
       }
-      setError(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -64,7 +76,7 @@ const CodingProfileDashboard: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/auth');
+      navigate('/');
       showToast('Logged out successfully', 'success');
     } catch (error) {
       showToast('Error logging out', 'error');
@@ -77,12 +89,12 @@ const CodingProfileDashboard: React.FC = () => {
   };
 
   const handleShareProfile = async () => {
-    const profileUrl = `${window.location.origin}/profile/${user?.username}`;
+    const profileUrl = `${window.location.origin}/profile/${viewingUsername}`;
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `${profileData?.profile?.name}'s Coding Profile`,
-          text: `Check out my coding profile on DevPlaza`,
+          title: `${profileData?.profile?.name || viewingUsername}'s Coding Profile`,
+          text: `Check out ${isOwnProfile ? 'my' : 'this'} coding profile on DevPlaza`,
           url: profileUrl
         });
       } else {
@@ -129,6 +141,64 @@ const CodingProfileDashboard: React.FC = () => {
   };
 
   if (loading) return <LoadingSpinner />;
+  
+  // Show profile incomplete message for own profile
+  if (profileIncomplete && isOwnProfile) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-8 sm:p-12 text-center shadow-2xl">
+        <div className="mb-6">
+          <UserPlus className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400 mb-4" />
+        </div>
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
+          Complete Your Profile
+        </h2>
+        <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-md mx-auto">
+          Please complete your profile by adding your coding platform links to start tracking your progress and showcase your achievements.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <button
+            onClick={() => navigate('/complete-profile')}
+            className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
+          >
+            Complete Profile Now
+          </button>
+          <button
+            onClick={handleLogout} // make sure handleLogout is in scope
+            className="bg-gray-700 px-8 py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  if (profileIncomplete && !isOwnProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-8 sm:p-12 text-center shadow-2xl">
+          <div className="mb-6">
+            <UserPlus className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400 mb-4" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
+            Profile Not Complete
+          </h2>
+          <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-md mx-auto">
+            This user hasn't completed their profile yet. Check back later to see their coding achievements!
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (error) return <ErrorAlert message={error} />;
   if (!profileData) return <ErrorAlert message="Profile data not available" />;
 
@@ -149,7 +219,6 @@ const CodingProfileDashboard: React.FC = () => {
       </button>
 
       {/* Share Profile Button - Fixed in corner */}
-      {/* Share Profile Button - Fixed in corner */}
       <button
         onClick={handleShareProfile}
         className="fixed top-3 right-3 z-50 p-2 sm:p-3 bg-gradient-to-r from-red-800 to-red-600 rounded-full shadow-lg hover:from-red-700 hover:to-red-500 transition-all duration-300 hover:scale-105"
@@ -158,8 +227,7 @@ const CodingProfileDashboard: React.FC = () => {
         <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
-
-      {/* Sidebar */}
+      {/* Sidebar - Always show, but pass isOwnProfile to control actions */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -169,11 +237,15 @@ const CodingProfileDashboard: React.FC = () => {
         onShareProfile={handleShareProfile}
         onRefreshProfile={handleRefreshProfile}
         refreshing={refreshing}
+        isOwnProfile={isOwnProfile}
       />
 
       {/* Main Content */}
       <div className="transition-all duration-300 md:ml-80">
         <div className="p-3 sm:p-4 lg:p-6 xl:p-8 pt-16 sm:pt-20 md:pt-8">
+          {/* Viewing Banner for other profiles */}
+          
+
           {/* Stats Section - More compact on mobile */}
           {validStats.length > 0 && (
             <div className="mb-6 sm:mb-8">
@@ -347,9 +419,6 @@ const CodingProfileDashboard: React.FC = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Platform Rankings */}
-                
               </div>
             )}
 
@@ -383,17 +452,21 @@ const CodingProfileDashboard: React.FC = () => {
               <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-6 sm:p-8 lg:p-12 text-center shadow-xl">
                 <div className="text-4xl sm:text-5xl lg:text-6xl xl:text-8xl mb-4 sm:mb-6">🚀</div>
                 <h3 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
-                  Ready to Start Coding?
+                  {isOwnProfile ? 'Ready to Start Coding?' : 'No Data Available'}
                 </h3>
                 <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base lg:text-lg max-w-md mx-auto">
-                  Your coding journey begins here. Start solving problems to see your progress!
+                  {isOwnProfile 
+                    ? 'Your coding journey begins here. Start solving problems to see your progress!' 
+                    : 'This user hasn\'t solved any problems yet.'}
                 </p>
-                <button
-                  onClick={() => navigate('/complete-profile')}
-                  className="bg-gradient-to-r from-red-600 to-red-500 px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-medium text-sm sm:text-base lg:text-lg"
-                >
-                  Complete Profile
-                </button>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => navigate('/complete-profile')}
+                    className="bg-gradient-to-r from-red-600 to-red-500 px-6 sm:px-8 py-2 sm:py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-medium text-sm sm:text-base lg:text-lg"
+                  >
+                    Complete Profile
+                  </button>
+                )}
               </div>
             )}
           </div>

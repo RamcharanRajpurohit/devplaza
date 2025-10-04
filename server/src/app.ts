@@ -6,16 +6,16 @@ import profileRoutes from "./routes/profileRoutes";
 import userInfoRoutes from './routes/userInfo';
 const bodyParser = require("body-parser");
 const cors = require('cors');
-const mongoose = require('mongoose'); // Keep CommonJS require
 const cookieParser = require('cookie-parser');
 import helmet from 'helmet';
-import userinfo from './routes/userInfo'; // yep, keep duplicate import as you had it
+import connectDB from './utils/connectDb';
+// yep, keep duplicate import as you had it
 
-const mongoURI = process.env.MONGO_URI as string;
-
-mongoose.connect(mongoURI)
-  .then(() => console.log('🟢 MongoDB connected to Atlas successfully!'))
-  .catch((err: any) => console.error('🔴 MongoDB connection error:', err));
+connectDB()
+  .then(() => {
+    app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+  })
+  .catch(err => console.error('MongoDB connection failed, not starting server:', err));
 
 const app = express();
 const port = process.env.PORT || 5000;

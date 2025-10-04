@@ -128,27 +128,40 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies?.jwt;
-    if (!refreshToken) return res.sendStatus(204); // No content
+    if (!refreshToken) return res.sendStatus(204); // No content — no cookie, no cry
 
-    if (!req.user?._id) {
-      return res.status(401).json({ message: "Unauthorized" });
+    // ✅ Verify JWT to get the user ID
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET as string
+      ) as { _id: string };
+    } catch (err) {
+      console.log("JWT verification failed 💀:", err);
+      return res.status(403).json({ message: "Invalid token" });
     }
 
-    // Remove the refreshToken only for this logged-in user
+    // ✅ Remove refreshToken from DB using the decoded user ID
     await UserTokens.updateOne(
-      { user: req.user._id },
+      { user: decoded._id },
       { $pull: { refreshToken } }
     );
 
-    // Clear cookie
-    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
-    res.sendStatus(204);
+    // ✅ Clear cookie
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+
+    console.log(`User ${decoded._id} logged out ✅`);
+    return res.sendStatus(204);
   } catch (error) {
     console.error("Logout error:", error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 
 
 interface DecodedPayload extends JwtPayload {

@@ -24,7 +24,18 @@ const Sidebar: React.FC<{
     onShareProfile: () => void;
     onRefreshProfile: () => void;
     refreshing: boolean;
-}> = ({ isOpen, onClose, user, profileData, onLogout, onShareProfile, onRefreshProfile, refreshing }) => {
+    isOwnProfile?: boolean; // Add this new prop
+}> = ({ 
+    isOpen, 
+    onClose, 
+    user, 
+    profileData, 
+    onLogout, 
+    onShareProfile, 
+    onRefreshProfile, 
+    refreshing,
+    isOwnProfile = true // Default to true for backward compatibility
+}) => {
     const navigate = useNavigate();
     const [showSettings, setShowSettings] = useState(false);
 
@@ -238,8 +249,8 @@ const Sidebar: React.FC<{
                     )}
                 </div>
 
-                {/* Settings Section - Fixed at bottom, only show when user has access */}
-                {user && (
+                {/* Settings Section - Fixed at bottom, ONLY show for own profile */}
+                {isOwnProfile && user && (
                     <div className="border-t border-red-800/30 bg-gradient-to-br from-gray-900 via-red-950 to-black">
                         <div className="p-4">
                             <button

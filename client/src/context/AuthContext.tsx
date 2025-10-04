@@ -4,21 +4,21 @@ interface UserData {
   id?: string;
   email?: string;
   username?: string;
-  profileCompleted?:boolean;
+  profileCompleted?: boolean;
   // Add other user properties as needed
 }
 
 interface AuthContextType {
   user: UserData | null;
   isAuthenticated: boolean;
-  isProfileCompleted:boolean;
+  isProfileCompleted: boolean;
   login: (token: string, userData: UserData) => void;
   logout: () => void;
   updateUser: (userData: UserData) => void;
   setEmail: (email: string) => void;
   refreshToken: () => Promise<void>;
   isLoading: boolean; // Add loading state
-  setIsProfileComplet:()=>void;
+  setIsProfileComplet: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isProfileCompleted, setIsProfileCompleted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Add loading state
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // Prevent multiple refresh calls
-  const path =import.meta.env.VITE_BACKEND_URL;
+  const path = import.meta.env.VITE_BACKEND_URL;
 
   const refreshToken = async () => {
     if (isRefreshing) {
@@ -37,9 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setIsRefreshing(true);
-    
+
     try {
-      const response = await fetch(path+"/api/auth/refresh-token", {
+      const response = await fetch(path + "/api/auth/refresh-token", {
         method: "POST",
         credentials: "include", // ✅ include cookies
       });
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(userData);
         setIsAuthenticated(true);
-        login(data.accessToken,data.user)
+        login(data.accessToken, data.user)
 
         console.log("✅ Token refreshed, user restored:", userData);
       } else {
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem('token');
         }
       }
-      
+
       // Only attempt refresh if no valid stored data
       console.log('🔄 No valid stored auth, attempting token refresh...');
       await refreshToken();
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading
     });
   }, [isAuthenticated, user, isLoading]);
-  
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
 
@@ -139,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setEmail = (email: string) => {
-    localStorage.setItem('email',email);
+    localStorage.setItem('email', email);
     if (user) {
       const updatedUser = { ...user, email };
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -148,16 +148,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+ const logout = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn(' No token found in localStorage');
+      return;
+    }
+
+    const response = await fetch(`${path}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include', // send cookies too if refresh tokens exist
+    });
+
+    if (!response.ok) {
+      console.error(` Logout failed: ${response.status}`);
+    }
+
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
     setIsLoading(false);
-    console.log('✅ User logged out');
-  };
-  const setIsProfileComplet=()=>{
-       setIsProfileCompleted(true);
+    console.log(' User logged out');
+  } catch (error) {
+    console.error(' Logout error:', error);
+  }
+};
+
+  const setIsProfileComplet = () => {
+    setIsProfileCompleted(true);
 
   }
   const updateUser = (userData: UserData) => {
@@ -171,11 +191,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      login, 
-      logout, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
+      login,
+      logout,
       updateUser,
       setEmail,
       refreshToken,

@@ -15,7 +15,7 @@ router.post('/verify-otp', verifyOtp);
 router.post("/refresh-token",refreshToken);
 router.post("/resend-otp",resendOtp )
 router.post("/forgot-password",forgotPassword )
-router.post("/logout",authenticateToken, logout);
+router.post("/logout",logout);
 
 // Update username
 router.patch('/update-username', authenticateToken, async (req, res) => {

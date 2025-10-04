@@ -102,7 +102,7 @@ function AuthRoutes() {
       {/* Public + Default Routes */}
       <Route path="/" element={<DevPlazaLanding />} />
       <Route path="/complete-profile" element={<UserInfoForm />} />
-      <Route path="/profile/:username" element={<PublicProfile />} />
+      <Route path="/profile/:username" element={<CodingProfileDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -72,6 +72,9 @@ const UserInfoForm: React.FC = () => {
     if (isAuthenticated && isProfileCompleted) {
       navigate('/');
     }
+    else if(!isAuthenticated){
+      navigate('/');
+    }
   }, [isAuthenticated, isProfileCompleted])
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
