@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { UserTokens } from "../models/userTokens";
-
 interface AccessTokenPayload extends JwtPayload {
   _id: string;
 }
@@ -36,13 +34,6 @@ export const authenticateToken = async (
       token,
       process.env.ACCESS_TOKEN_SECRET as string
     ) as AccessTokenPayload;
-    console.log("✅ Token verified. Decoded payload:", decoded);
-    // Extra step: check if user still has valid refreshTokens in DB
-    // const userTokens = await UserTokens.findOne({ user: decoded._id });
-    // if (!userTokens || userTokens.refreshToken.length === 0) {
-    //   return res.status(403).json({ message: "Session expired. Please log in again." });
-    // }
-
      req.user = { 
       _id: decoded._id
     };
