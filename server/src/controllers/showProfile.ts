@@ -1,10 +1,10 @@
-import { fetchGithubProfile } from "../services/github";
-import { fetchLeetcodeProfile } from "../services/leetcode";
-import { fetchCodeforcesProfile } from "../services/codeforces";
-import { fetchGFGUserData } from "../services/gfg";
+import { fetchGithubProfile } from "../services/platform/github";
+import { fetchLeetcodeProfile } from "../services/platform/leetcode";
+import { fetchCodeforcesProfile } from "../services/platform/codeforces";
+import { fetchGFGUserData } from "../services/platform/gfg";
 import { Request, Response } from "express";
-import { fetchCodechefProfile } from "../services/codechef";
-import { fetchCode360Profile } from "../services/code360";
+import { fetchCodechefProfile } from "../services/platform/codechef";
+import { fetchCode360Profile } from "../services/platform/code360";
 import { User } from "../models/user";
 import { UserInfo } from "../models/userInfo";
 import type EnhancedProfileData from "../types/enhanceData";

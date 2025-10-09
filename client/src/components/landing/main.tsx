@@ -125,9 +125,8 @@ const DevPlazaLanding = () => {
             {/* Right Content - Background Image Preview */}
             <div className="relative">
               <div className="relative h-96 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-xl shadow-2xl overflow-hidden">
-               
-                 <img src="/demo.png" alt="DevPlaza Preview" className="w-full h-full object-cover" /> 
-                
+             <img src="/demo.png" alt="DevPlaza Preview" className="object-contain w-full h-full" />
+
                 {/* Placeholder background pattern */}
                 <div 
                   className="w-full h-full bg-cover bg-center bg-no-repeat"
