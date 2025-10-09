@@ -12,7 +12,6 @@ const EmailVerification: React.FC = () => {
   
       useEffect(() => {
       if (isAuthenticated) {
-          // If user is authenticated, redirect to dashboard
           window.location.href = '/dashboard';
           }
       }, [isAuthenticated]);

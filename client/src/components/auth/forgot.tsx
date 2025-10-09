@@ -18,7 +18,6 @@ export default function DevPlazaForgotPassword() {
   
       useEffect(() => {
       if (isAuthenticated) {
-          // If user is authenticated, redirect to dashboard
           window.location.href = '/dashboard';
           }
       }, [isAuthenticated]);
@@ -40,21 +39,20 @@ export default function DevPlazaForgotPassword() {
     setMessage('');
 
     try {
-      console.log('🔄 Sending forgot password request for:', email);
+      console.log(' Sending forgot password request for:', email);
       const response = await axios.post(`${API}/api/auth/forgot-password`, { email });
       
-      console.log('✅ Forgot password request successful:', response.data);
+      console.log('Forgot password request successful:', response.data);
       setEmail(email)
       setMessage(response.data.message || 'Reset code sent to your email');
       setIsEmailSent(true);
       
-      // Navigate to OTP after a short delay
       setTimeout(() => {
         navigate('/auth/otp');
       }, 2000);
       
     } catch (err: any) {
-      console.error('❌ Forgot password error:', err);
+      console.error(' Forgot password error:', err);
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
@@ -81,7 +79,6 @@ export default function DevPlazaForgotPassword() {
   };
 
   const handleOpenEmail = () => {
-    // Navigate to OTP page
     navigate('/auth/otp');
   };
 

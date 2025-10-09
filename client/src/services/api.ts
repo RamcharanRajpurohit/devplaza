@@ -41,7 +41,7 @@ const refreshToken = async () => {
   }
 };
 
-// Request interceptor for adding auth token
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -55,7 +55,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for handling 401 errors and token refresh
+
 api.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
@@ -65,10 +65,10 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If error is 401 and we haven't tried refreshing token yet
+   
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // If token refresh is in progress, wait for new token
+      
         try {
           const token = await new Promise<string>(resolve => {
             subscribeTokenRefresh(resolve);
@@ -139,17 +139,6 @@ export const profileService = {
   getPublicProfile: (username: string) => 
     api.get(`/profile/${username}`),
     
-  recordProfileView: (username: string) =>
-    api.post(`/profile/view/${username}`),
-    
-  getProfileStats: (username: string) =>
-    api.get(`/profile/stats/${username}`),
-    
-  updateProfileVisibility: (isPublic: boolean) =>
-    api.put('/profile/visibility', { isPublic }),
-    
-  generateProfileImage: (username: string) =>
-    api.post(`/profile/generate-image/${username}`),
 };
 
 export const userInfoService = {

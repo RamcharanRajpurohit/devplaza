@@ -64,12 +64,6 @@ export default interface EnhancedProfileData {
       url: string;
     };
   };
-  awards: Array<{
-    id: string;
-    title: string;
-    icon: string;
-    color: string;
-  }>;
   topicAnalysis: {
     [key: string]: number;
   };

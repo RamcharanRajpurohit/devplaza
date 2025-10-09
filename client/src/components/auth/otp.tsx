@@ -112,16 +112,16 @@ export default function DevPlazaOTP() {
           login(data.token, data.user);
           setTimeout(() => {
               navigate('/complete-profile', { replace: true, state: { fromOTP: true } });        
-          }, 900); // ~900ms transition to show success + loader
+          }, 900); 
         } else {
           throw new Error('No token received from server');
         }
       } else {
-        console.warn('⚠️ OTP verification failed:', data.message);
+        console.warn('OTP verification failed:', data.message);
         setError(data.message || 'Invalid OTP. Please try again.');
       }
     } catch (error) {
-      console.error('❌ OTP verification error:', error);
+      console.error(' OTP verification error:', error);
       setError('Network error. Please try again.');
     } finally {
       setIsVerifying(false);

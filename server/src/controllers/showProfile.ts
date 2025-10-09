@@ -97,107 +97,7 @@ const mergeTopicAnalysis = (
 };
 
 // Helper function to generate awards based on achievements
-const generateAwards = (data: any) => {
-  const awards = [];
-  
-  const totalSolved = 
-    (data.leetcode?.totalSolved || 0) +
-    (data.gfg?.userInfo?.total_problems_solved || 0) +
-    (data.codeforces?.solvedCount || 0) +
-    (data.codechef?.problemsSolved ? parseInt(data.codechef.problemsSolved) : 0) +
-    (data.code360?.data?.dsa_domain_data?.problem_count_data?.total_count || 0);
 
-  // Problem Solver Awards
-  if (totalSolved > 500) {
-    awards.push({
-      id: 'elite_problem_solver',
-      title: 'Elite Problem Solver',
-      icon: '👑',
-      color: 'gold'
-    });
-  } else if (totalSolved > 100) {
-    awards.push({
-      id: 'problem_solver',
-      title: 'Problem Solver',
-      icon: '🏆',
-      color: 'gold'
-    });
-  }
-
-  // Contest Awards
-  const totalContests = 
-    (data.leetcode?.contest?.attended || 0) +
-    (data.codechef?.contestsParticipated || 0) +
-    (data.codeforces?.contests?.total || 0);
-
-  if (totalContests > 50) {
-    awards.push({
-      id: 'contest_legend',
-      title: 'Contest Legend',
-      icon: '⚔️',
-      color: 'red'
-    });
-  } else if (totalContests > 10) {
-    awards.push({
-      id: 'contest_warrior',
-      title: 'Contest Warrior',
-      icon: '⚔️',
-      color: 'purple'
-    });
-  }
-
-  // Multi-Platform Award
-  const activePlatforms = [
-    data.github, data.leetcode, data.codeforces, 
-    data.gfg, data.codechef, data.code360
-  ].filter(platform => platform && Object.keys(platform).length > 0).length;
-
-  if (activePlatforms >= 4) {
-    awards.push({
-      id: 'multi_platform',
-      title: 'Multi-Platform Coder',
-      icon: '🌟',
-      color: 'blue'
-    });
-  }
-
-  // GitHub Star Award
-  if (data.github?.stats?.totalStars > 50) {
-    awards.push({
-      id: 'github_star',
-      title: 'GitHub Star',
-      icon: '⭐',
-      color: 'yellow'
-    });
-  }
-
-  // Rating-based Awards
-  if (data.codeforces?.rating > 1900 || data.leetcode?.contest?.rating > 2000) {
-    awards.push({
-      id: 'competitive_master',
-      title: 'Competitive Master',
-      icon: '🎯',
-      color: 'red'
-    });
-  }
-
-  // Streak Award
-  const maxStreak = Math.max(
-    data.gfg?.userInfo?.pod_solved_longest_streak || 0,
-    data.leetcode?.calendar?.streak || 0
-  );
-
-  if (maxStreak > 30) {
-    awards.push({
-      id: 'streak_master',
-      title: 'Streak Master',
-      icon: '🔥',
-      color: 'orange'
-    });
-  }
-
-  return awards;
-};
 
 export const showProfile = async (req: Request<ProfileParams>, res: Response) => {
   try {
@@ -414,9 +314,6 @@ export const showProfile = async (req: Request<ProfileParams>, res: Response) =>
           url: userInfoData.links.github
         }
       },
-
-      awards: generateAwards({ github, leetcode, codeforces, gfg, codechef, code360 }),
-
       topicAnalysis: mergedTopics
     };
     return res.json(enhancedProfile);

@@ -1,5 +1,4 @@
-/* Add these CSS variables to your main CSS file (e.g., src/index.css) 
-   Place this BEFORE the Tailwind imports */
+
    
 :root {
   /* Background Colors */
@@ -29,11 +28,7 @@
   --accent-primary: #3b82f6; /* blue-500 */
   --accent-secondary: #6b7280; /* gray-500 */
 }
-/* 
-For Vite + Tailwind CSS v4 plugin setup
-Add this to your main CSS file (e.g., src/index.css or src/main.css)
-Replace your existing Tailwind imports with this content
-*/
+
 
 @import "tailwindcss";
 

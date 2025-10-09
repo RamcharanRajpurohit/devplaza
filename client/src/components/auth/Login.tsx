@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin } from "@react-oauth/google";
 import type { CredentialResponse } from "@react-oauth/google";
@@ -16,16 +16,16 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login,setEmail } = useAuth();
-   const { isAuthenticated } = useAuth();
-  
-      useEffect(() => {
-      if (isAuthenticated) {
-          // If user is authenticated, redirect to dashboard
-          window.location.href = '/dashboard';
-          }
-      }, [isAuthenticated]);
-  
+  const { login, setEmail } = useAuth();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // If user is authenticated, redirect to dashboard
+      window.location.href = '/dashboard';
+    }
+  }, [isAuthenticated]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('🔄 Attempting login for:', email);
     e.preventDefault();
@@ -36,7 +36,7 @@ const Login: React.FC = () => {
       const response = await authService.login(email, password);
 
       if (response.data.accessToken) {
-        console.log('✅ Login successful');
+        console.log('Login successful');
         login(response.data.accessToken, response.data.user);
         console.log(response.data.user);
         navigate('/dashboard');
@@ -47,11 +47,11 @@ const Login: React.FC = () => {
       const status = err.response?.status;
       const data = err.response?.data;
 
-      console.error('❌ Login error:', data);
+      console.error(' Login error:', data);
 
       if (status === 403 && data?.code === "USER_NOT_VERIFIED") {
         setEmail(email);
-        console.log('🚀 Redirecting to OTP verification for:', email);
+        console.log(' Redirecting to OTP verification for:', email);
         navigate('/auth/otp');
       } else {
         setError(data?.message || 'An error occurred');
@@ -69,7 +69,7 @@ const Login: React.FC = () => {
       setTimeout(() => {
         navigate('/dashboard');
       }, 1500);
-      
+
     } catch (err: any) {
       setError(err.response?.data?.message || "Google login failed");
     }
@@ -78,7 +78,7 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4 relative">
 
-      {/* 🆕 Back button OUTSIDE the frame at top-left corner */}
+      {/* Back button OUTSIDE the frame at top-left corner */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 flex items-center text-md text-red-400 hover:text-red-300 transition-colors duration-200"
@@ -90,7 +90,7 @@ const Login: React.FC = () => {
         <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
           Login to DevPlaza
         </h2>
-        
+
         {error && (
           <div className="bg-red-900/50 border border-red-800 text-red-200 px-4 py-2 rounded mb-4">
             {error}
@@ -136,8 +136,8 @@ const Login: React.FC = () => {
             {loading ? (
               <>
                 <svg className="animate-spin h-5 w-5 text-red-200" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z" />
                 </svg>
                 <span>Loading...</span>
               </>
@@ -166,8 +166,8 @@ const Login: React.FC = () => {
 
           <div className="flex justify-center w-full">
             <div className="">
-              <GoogleLogin 
-                onSuccess={handleGoogleSuccess} 
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
                 onError={() => setError("Google login failed")}
                 size="large"
                 width="100%"

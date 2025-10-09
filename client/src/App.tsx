@@ -11,7 +11,6 @@ import Settings from './components/dashboard/Settings';
 import NotFound from './components/common/NotFound';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import DevPlazaOTP from './components/auth/otp';
-import ShowUser from './components/user/showUser';
 import UserInfoForm from './components/auth/UserInfoForm';
 import DevPlazaLanding from './components/landing/main';
 
@@ -92,9 +91,9 @@ function AuthRoutes() {
       <Route
         path="/user/:username"
         element={
-          <ProtectedRoute>
-            <ShowUser />
-          </ProtectedRoute>
+        
+            <CodingProfileDashboard/>
+          
         }
       />
 
