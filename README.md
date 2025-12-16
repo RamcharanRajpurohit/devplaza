@@ -59,7 +59,7 @@ To check if `.env` files exist (they are gitignored):
 
 ```bash
 # From the project root
-find . -name ".env" -type f 2>/dev/null | grep -v node_modules
+find . -name ".env" -type f 2>/dev/null | grep -v -E 'node_modules|\.git|dist'
 ```
 
 To see which `.env` files are required:
