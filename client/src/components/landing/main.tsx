@@ -7,9 +7,6 @@ const DevPlazaLanding = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  // Demo profile username
-  const demoUsername = 'ram';
-
   useEffect(() => {
     if (isAuthenticated) window.location.href = '/dashboard';
   }, [isAuthenticated]);
@@ -26,7 +23,7 @@ const DevPlazaLanding = () => {
     { to: '/potd', style: btnStyles.default, text: 'Problem of the Day' },
     { to: '/auth/login', style: btnStyles.default, text: 'Login' },
     { to: '/auth/signup', style: btnStyles.primary, text: 'Sign Up' },
-    { to: `/profile/${demoUsername}`, style: btnStyles.outline, text: 'View Demo Profile' }
+    { to: '/profile/ram', style: btnStyles.outline, text: 'View Demo Profile' }
   ];
 
   // Features data
@@ -109,7 +106,7 @@ const DevPlazaLanding = () => {
                 <Link to="/auth/signup" className="px-8 py-4 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg text-white font-medium transition-all duration-300 shadow-lg shadow-red-900/30 transform hover:scale-105">
                   Get Started Free
                 </Link>
-                <Link to={`/profile/${demoUsername}`} className="px-8 py-4 border border-red-600/50 text-red-400 hover:bg-red-900/30 rounded-lg transition-all duration-200 font-medium">
+                <Link to="/profile/ram" className="px-8 py-4 border border-red-600/50 text-red-400 hover:bg-red-900/30 rounded-lg transition-all duration-200 font-medium">
                   View Demo Profile
                 </Link>
               </div>
