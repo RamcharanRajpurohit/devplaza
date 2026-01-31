@@ -168,4 +168,19 @@ export const fetchUserProfile = async (username: string) => {
   }
 };
 
+// Problem of the Day services (public - no auth required)
+export const potdService = {
+  getTodaysPOTDs: () =>
+    api.get('/potd/today'),
+
+  getHistoricalPOTDs: (date: string) =>
+    api.get('/potd/history', { params: { date } }),
+
+  getPOTDStats: () =>
+    api.get('/potd/stats'),
+
+  refreshPOTDs: () =>
+    api.post('/potd/refresh'),
+};
+
 export default api;

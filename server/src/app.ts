@@ -4,6 +4,7 @@ import express, { Request, Response } from 'express';
 import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import userInfoRoutes from './routes/userInfo';
+import potdRoutes from './routes/potdRoutes';
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -27,6 +28,7 @@ app.use(helmet());
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use('/api/user-info', userInfoRoutes);
+app.use('/api/potd', potdRoutes);
 
 // Example root route
 app.get('/', (req: Request, res: Response) => {
