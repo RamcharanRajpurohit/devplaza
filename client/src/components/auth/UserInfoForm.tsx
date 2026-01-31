@@ -3,52 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import type UserInfoFormData from '../../types/userInfo';
 
-
 const UserInfoForm: React.FC = () => {
   const [formData, setFormData] = useState<UserInfoFormData>({
-    fullName: '',
-    bio: '',
-    location: '',
-    phone: '',
-    email: '',
-    portfolio: '',
-    institute: '',
-    graduationYear: '',
+    fullName: '', bio: '', location: '', phone: '', email: '', portfolio: '',
+    institute: '', graduationYear: '',
     links: {
-      github: '',
-      linkedin: '',
-      twitter: '',
-      instagram: '',
-      gfg: '',
-      leetcode: '',
-      codechef: '',
-      code360: '',
-      codeforces: '',
-      hackerrank: '',
+      github: '', linkedin: '', twitter: '', instagram: '', gfg: '', leetcode: '',
+      codechef: '', code360: '', codeforces: '', hackerrank: ''
     },
     skills: [],
-    experience: {
-      years: '',
-      currentRole: '',
-      company: '',
-    }
+    experience: { years: '', currentRole: '', company: '' }
   });
 
   const [skillInput, setSkillInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState<'basic' | 'contact' | 'academic' | 'platforms' | 'skills' | 'experience'>('basic');
-  const path =import.meta.env.VITE_BACKEND_URL;
+  
+  const path = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
-  const { isProfileCompleted, isAuthenticated,setIsProfileComplet } = useAuth();
+  const { isProfileCompleted, isAuthenticated, setIsProfileComplet } = useAuth();
+
   useEffect(() => {
-    if (isAuthenticated && isProfileCompleted) {
-      navigate('/');
-    }
-    else if(!isAuthenticated){
-      navigate('/');
-    }
-  }, [isAuthenticated, isProfileCompleted])
+    if (isAuthenticated && isProfileCompleted) navigate('/');
+    else if (!isAuthenticated) navigate('/');
+  }, [isAuthenticated, isProfileCompleted]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -56,15 +36,12 @@ const UserInfoForm: React.FC = () => {
 
     const payload = {
       ...formData,
-      experience: {
-        ...formData.experience,
-        years: formData.experience.years ? parseInt(formData.experience.years) : 0
-      },
+      experience: { ...formData.experience, years: formData.experience.years ? parseInt(formData.experience.years) : 0 },
       graduationYear: formData.graduationYear ? parseInt(formData.graduationYear) : undefined
     };
 
     try {
-      const response = await fetch(path+'/api/user/info', {
+      const response = await fetch(path + '/api/user/info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,30 +66,18 @@ const UserInfoForm: React.FC = () => {
   };
 
   const handleLinksChange = (platform: keyof typeof formData.links, value: string) => {
-    setFormData({
-      ...formData,
-      links: {
-        ...formData.links,
-        [platform]: value
-      }
-    });
+    setFormData({ ...formData, links: { ...formData.links, [platform]: value } });
   };
 
   const addSkill = () => {
     if (skillInput.trim() && !formData.skills.includes(skillInput.trim())) {
-      setFormData({
-        ...formData,
-        skills: [...formData.skills, skillInput.trim()]
-      });
+      setFormData({ ...formData, skills: [...formData.skills, skillInput.trim()] });
       setSkillInput('');
     }
   };
 
   const removeSkill = (skillToRemove: string) => {
-    setFormData({
-      ...formData,
-      skills: formData.skills.filter(skill => skill !== skillToRemove)
-    });
+    setFormData({ ...formData, skills: formData.skills.filter(skill => skill !== skillToRemove) });
   };
 
   const handleSkillKeyPress = (e: React.KeyboardEvent) => {
@@ -122,6 +87,53 @@ const UserInfoForm: React.FC = () => {
     }
   };
 
+  // Validation functions
+  const isValidURL = (url: string): boolean => {
+    if (!url.trim()) return true; // Empty is okay (optional field)
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const isValidUsername = (username: string): boolean => {
+    if (!username.trim()) return true; // Empty is okay
+    // Check if it's not a URL (doesn't contain :// or www.)
+    return !username.includes('://') && !username.toLowerCase().startsWith('www.');
+  };
+
+  const canProceedToNext = (): boolean => {
+    // Name is mandatory for proceeding from basic section
+    if (activeSection === 'basic' && !formData.fullName.trim()) {
+      setError('Full Name is required to continue');
+      return false;
+    }
+
+    // Validate portfolio URL if provided
+    if (activeSection === 'contact' && formData.portfolio && !isValidURL(formData.portfolio)) {
+      setError('Please enter a valid portfolio URL (e.g., https://example.com)');
+      return false;
+    }
+
+    // Validate platform usernames
+    if (activeSection === 'platforms') {
+      const invalidPlatforms = Object.entries(formData.links)
+        .filter(([, value]) => value && !isValidUsername(value))
+        .map(([key]) => key);
+
+      if (invalidPlatforms.length > 0) {
+        setError(`Please enter only usernames (not full URLs) for: ${invalidPlatforms.join(', ')}`);
+        return false;
+      }
+    }
+
+    setError('');
+    return true;
+  };
+
+  // Sections configuration
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: '👤' },
     { id: 'contact', label: 'Contact', icon: '📧' },
@@ -130,6 +142,77 @@ const UserInfoForm: React.FC = () => {
     { id: 'skills', label: 'Skills', icon: '⚡' },
     { id: 'experience', label: 'Experience', icon: '💼' }
   ] as const;
+
+  // Input field configurations
+  const basicFields = [
+    { type: 'text', placeholder: 'Full Name *', value: formData.fullName, onChange: (v: string) => setFormData({ ...formData, fullName: v }), required: true, autoFocus: true },
+    { type: 'textarea', placeholder: 'Bio / About yourself (optional)', value: formData.bio, onChange: (v: string) => setFormData({ ...formData, bio: v }) },
+    { type: 'text', placeholder: 'Location (City, Country) (optional)', value: formData.location, onChange: (v: string) => setFormData({ ...formData, location: v }) }
+  ];
+
+  const contactFields = [
+    { type: 'email', placeholder: 'Email Address (optional)', value: formData.email, onChange: (v: string) => setFormData({ ...formData, email: v }) },
+    { type: 'tel', placeholder: 'Phone Number (optional)', value: formData.phone, onChange: (v: string) => setFormData({ ...formData, phone: v }) },
+    { type: 'url', placeholder: 'Portfolio Website URL (optional) - e.g., https://yoursite.com', value: formData.portfolio, onChange: (v: string) => setFormData({ ...formData, portfolio: v }) }
+  ];
+
+  const academicFields = [
+    { type: 'text', placeholder: 'Institute / University Name (optional)', value: formData.institute, onChange: (v: string) => setFormData({ ...formData, institute: v }) },
+    { type: 'number', placeholder: 'Graduation Year (optional) - e.g., 2025', value: formData.graduationYear, onChange: (v: string) => setFormData({ ...formData, graduationYear: v }), min: 1950, max: 2050 }
+  ];
+
+  const platformFields = [
+    { platform: 'github', placeholder: 'GitHub Username (not URL, just username)' },
+    { platform: 'linkedin', placeholder: 'LinkedIn Username (not URL, just username)' },
+    { platform: 'twitter', placeholder: 'Twitter/X Username (not URL, just username)' },
+    { platform: 'instagram', placeholder: 'Instagram Username (not URL, just username)' },
+    { platform: 'leetcode', placeholder: 'LeetCode Username (not URL, just username)' },
+    { platform: 'codeforces', placeholder: 'CodeForces Username (not URL, just username)' },
+    { platform: 'codechef', placeholder: 'CodeChef Username (not URL, just username)' },
+    { platform: 'gfg', placeholder: 'GeeksforGeeks Username (not URL, just username)' },
+    { platform: 'hackerrank', placeholder: 'HackerRank Username (not URL, just username)' },
+    { platform: 'code360', placeholder: 'Code360 Username (not URL, just username)' }
+  ];
+
+  const experienceFields = [
+    { type: 'number', placeholder: 'Years of Experience (optional)', value: formData.experience.years, onChange: (v: string) => setFormData({ ...formData, experience: { ...formData.experience, years: v } }), min: 0 },
+    { type: 'text', placeholder: 'Current Role / Position (optional)', value: formData.experience.currentRole, onChange: (v: string) => setFormData({ ...formData, experience: { ...formData.experience, currentRole: v } }) },
+    { type: 'text', placeholder: 'Company Name (optional)', value: formData.experience.company, onChange: (v: string) => setFormData({ ...formData, experience: { ...formData.experience, company: v } }) }
+  ];
+
+  // Common input className
+  const inputClass = "w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm";
+
+  const renderInput = (field: any, index: number) => {
+    if (field.type === 'textarea') {
+      return (
+        <textarea
+          key={index}
+          placeholder={field.placeholder}
+          value={field.value}
+          onChange={(e) => field.onChange(e.target.value)}
+          className={`${inputClass} h-24 resize-none`}
+          autoFocus={field.autoFocus}
+        />
+      );
+    }
+    return (
+      <input
+        key={index}
+        type={field.type}
+        placeholder={field.placeholder}
+        value={field.value}
+        onChange={(e) => field.onChange(e.target.value)}
+        required={field.required}
+        min={field.min}
+        max={field.max}
+        autoFocus={field.autoFocus}
+        className={inputClass}
+      />
+    );
+  };
+
+  const currentIndex = sections.findIndex(s => s.id === activeSection);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4 py-8">
@@ -141,6 +224,7 @@ const UserInfoForm: React.FC = () => {
             Complete Your Profile
           </h2>
           <p className="text-red-200/70 text-sm mt-1">Fill in your details to get started</p>
+          <p className="text-red-300/50 text-xs mt-2">* Full Name is required. All other fields are optional.</p>
         </div>
 
         {/* Tabs Navigation */}
@@ -150,10 +234,11 @@ const UserInfoForm: React.FC = () => {
               key={section.id}
               type="button"
               onClick={() => setActiveSection(section.id as any)}
-              className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium transition-all ${activeSection === section.id
+              className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium transition-all ${
+                activeSection === section.id
                   ? 'bg-red-900/30 text-red-200 border-b-2 border-red-500'
                   : 'text-red-300/60 hover:text-red-200 hover:bg-red-900/10'
-                }`}
+              }`}
             >
               <span className="mr-2">{section.icon}</span>
               {section.label}
@@ -168,173 +253,47 @@ const UserInfoForm: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Form Content */}
           <div className="p-6 max-h-[500px] overflow-y-auto">
-
             {/* Basic Info Section */}
             {activeSection === 'basic' && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <input
-                  type="text"
-                  placeholder="Full Name *"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  required
-                />
-
-                <textarea
-                  placeholder="Bio / About yourself"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 h-24 focus:outline-none focus:border-red-500 resize-none text-sm"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Location (City, Country)"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
+                {basicFields.map(renderInput)}
               </div>
             )}
 
             {/* Contact Section */}
             {activeSection === 'contact' && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
-
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
-
-                <input
-                  type="url"
-                  placeholder="Portfolio Website URL"
-                  value={formData.portfolio}
-                  onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
+                {contactFields.map(renderInput)}
               </div>
             )}
 
             {/* Academic Section */}
             {activeSection === 'academic' && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <input
-                  type="text"
-                  placeholder="Institute / University Name"
-                  value={formData.institute}
-                  onChange={(e) => setFormData({ ...formData, institute: e.target.value })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
-
-                <input
-                  type="number"
-                  placeholder="Graduation Year (e.g., 2025)"
-                  value={formData.graduationYear}
-                  onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
-                  min="1950"
-                  max="2050"
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
+                {academicFields.map(renderInput)}
               </div>
             )}
 
             {/* Platforms Section */}
             {activeSection === 'platforms' && (
               <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="p-3 bg-red-900/20 border border-red-700/30 rounded-lg mb-4">
+                  <p className="text-red-200/80 text-xs sm:text-sm">
+                    ℹ️ Enter only your <strong>username</strong>, not the full URL. Example: "johndoe" not "https://github.com/johndoe"
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="GitHub Username"
-                    value={formData.links.github}
-                    onChange={(e) => handleLinksChange('github', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="LinkedIn Username"
-                    value={formData.links.linkedin}
-                    onChange={(e) => handleLinksChange('linkedin', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Twitter/X Username"
-                    value={formData.links.twitter}
-                    onChange={(e) => handleLinksChange('twitter', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Instagram Username"
-                    value={formData.links.instagram}
-                    onChange={(e) => handleLinksChange('instagram', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="LeetCode Username"
-                    value={formData.links.leetcode}
-                    onChange={(e) => handleLinksChange('leetcode', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="CodeForces Username"
-                    value={formData.links.codeforces}
-                    onChange={(e) => handleLinksChange('codeforces', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="CodeChef Username"
-                    value={formData.links.codechef}
-                    onChange={(e) => handleLinksChange('codechef', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="GeeksforGeeks Username"
-                    value={formData.links.gfg}
-                    onChange={(e) => handleLinksChange('gfg', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="HackerRank Username"
-                    value={formData.links.hackerrank}
-                    onChange={(e) => handleLinksChange('hackerrank', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Code360 Username"
-                    value={formData.links.code360}
-                    onChange={(e) => handleLinksChange('code360', e.target.value)}
-                    className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                  />
+                  {platformFields.map((field, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      placeholder={field.placeholder}
+                      value={formData.links[field.platform as keyof typeof formData.links]}
+                      onChange={(e) => handleLinksChange(field.platform as keyof typeof formData.links, e.target.value)}
+                      className={inputClass}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -342,14 +301,19 @@ const UserInfoForm: React.FC = () => {
             {/* Skills Section */}
             {activeSection === 'skills' && (
               <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg mb-4">
+                  <p className="text-blue-200/80 text-xs sm:text-sm">
+                    ℹ️ Skills are <strong>optional</strong>. Add the technologies and tools you're proficient in.
+                  </p>
+                </div>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Add a skill (press Enter)"
+                    placeholder="Add a skill (press Enter) - optional"
                     value={skillInput}
                     onChange={(e) => setSkillInput(e.target.value)}
                     onKeyDown={handleSkillKeyPress}
-                    className="flex-1 p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
+                    className={`flex-1 ${inputClass}`}
                   />
                   <button
                     type="button"
@@ -385,48 +349,12 @@ const UserInfoForm: React.FC = () => {
             {/* Experience Section */}
             {activeSection === 'experience' && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <input
-                  type="number"
-                  placeholder="Years of Experience"
-                  value={formData.experience.years}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    experience: {
-                      ...formData.experience,
-                      years: e.target.value
-                    }
-                  })}
-                  min="0"
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Current Role / Position"
-                  value={formData.experience.currentRole}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    experience: {
-                      ...formData.experience,
-                      currentRole: e.target.value
-                    }
-                  })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Company Name"
-                  value={formData.experience.company}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    experience: {
-                      ...formData.experience,
-                      company: e.target.value
-                    }
-                  })}
-                  className="w-full p-3 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 text-sm"
-                />
+                <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg mb-4">
+                  <p className="text-blue-200/80 text-xs sm:text-sm">
+                    ℹ️ Experience details are <strong>optional</strong>. You can skip this section if you prefer.
+                  </p>
+                </div>
+                {experienceFields.map(renderInput)}
               </div>
             )}
           </div>
@@ -435,12 +363,7 @@ const UserInfoForm: React.FC = () => {
           <div className="p-6 border-t border-red-900/30 bg-black/30 flex justify-between items-center">
             <button
               type="button"
-              onClick={() => {
-                const currentIndex = sections.findIndex(s => s.id === activeSection);
-                if (currentIndex > 0) {
-                  setActiveSection(sections[currentIndex - 1].id as any);
-                }
-              }}
+              onClick={() => currentIndex > 0 && setActiveSection(sections[currentIndex - 1].id as any)}
               disabled={activeSection === 'basic'}
               className="px-4 py-2 text-red-300 hover:text-red-200 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
             >
@@ -448,14 +371,15 @@ const UserInfoForm: React.FC = () => {
             </button>
 
             <div className="text-sm text-red-300/60">
-              {sections.findIndex(s => s.id === activeSection) + 1} of {sections.length}
+              {currentIndex + 1} of {sections.length}
             </div>
 
             {activeSection === 'experience' ? (
               <button
                 type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 disabled:from-gray-700 disabled:to-gray-600 rounded-lg text-white font-medium transition-all duration-200 text-sm"
+                disabled={loading || !formData.fullName.trim()}
+                className="px-6 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 disabled:from-gray-700 disabled:to-gray-600 rounded-lg text-white font-medium transition-all duration-200 text-sm disabled:cursor-not-allowed"
+                title={!formData.fullName.trim() ? 'Full Name is required' : ''}
               >
                 {loading ? 'Saving...' : 'Complete Profile'}
               </button>
@@ -463,8 +387,7 @@ const UserInfoForm: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  const currentIndex = sections.findIndex(s => s.id === activeSection);
-                  if (currentIndex < sections.length - 1) {
+                  if (canProceedToNext() && currentIndex < sections.length - 1) {
                     setActiveSection(sections[currentIndex + 1].id as any);
                   }
                 }}
