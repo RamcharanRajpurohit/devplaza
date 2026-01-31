@@ -183,4 +183,19 @@ export const potdService = {
     api.post('/potd/refresh'),
 };
 
+// Contest services (public - no auth required)
+export const contestService = {
+  getUpcomingContests: () =>
+    api.get('/contests/upcoming'),
+
+  getTodayContests: () =>
+    api.get('/contests/today'),
+
+  getContestStats: () =>
+    api.get('/contests/stats'),
+
+  refreshContests: () =>
+    api.post('/contests/refresh'),
+};
+
 export default api;

@@ -14,6 +14,7 @@ import DevPlazaOTP from './components/auth/otp';
 import UserInfoForm from './components/auth/UserInfoForm';
 import DevPlazaLanding from './components/landing/main';
 import ProblemOfTheDay from './components/potd/ProblemOfTheDay';
+import Contests from './components/contests/Contests';
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -101,6 +102,7 @@ function AuthRoutes() {
       {/* Public + Default Routes */}
       <Route path="/" element={<DevPlazaLanding />} />
       <Route path="/potd" element={<ProblemOfTheDay />} />
+      <Route path="/contests" element={<Contests />} />
       <Route path="/complete-profile" element={<UserInfoForm />} />
       <Route path="/profile/:username" element={<CodingProfileDashboard />} />
       <Route path="*" element={<NotFound />} />

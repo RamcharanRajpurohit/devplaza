@@ -21,6 +21,7 @@ const DevPlazaLanding = () => {
   // Navigation links
   const navLinks = [
     { to: '/potd', style: btnStyles.default, text: 'Problem of the Day' },
+    { to: '/contests', style: btnStyles.default, text: 'Contests' },
     { to: '/auth/login', style: btnStyles.default, text: 'Login' },
     { to: '/auth/signup', style: btnStyles.primary, text: 'Sign Up' },
     { to: '/profile/ram', style: btnStyles.outline, text: 'View Demo Profile' }

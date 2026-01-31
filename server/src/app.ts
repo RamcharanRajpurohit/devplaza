@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import userInfoRoutes from './routes/userInfo';
 import potdRoutes from './routes/potdRoutes';
+import contestRoutes from './routes/contestRoutes';
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -33,6 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use('/api/user-info', userInfoRoutes);
 app.use('/api/potd', potdRoutes);
+app.use('/api/contests', contestRoutes);
 
 // Example root route
 app.get('/', (req: Request, res: Response) => {
