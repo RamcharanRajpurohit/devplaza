@@ -6,7 +6,7 @@ import axios from "axios";
 // import { useAuthStore } from '../../services/authState';
 
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft } from "lucide-react";
+import PublicHeader from '../common/PublicHeader';
 
 const API = import.meta.env.VITE_BACKEND_URL;
 
@@ -72,14 +72,11 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4">
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 flex items-center text-md text-red-400 hover:text-red-300 transition-colors duration-200"
-      >
-        <ArrowLeft className="h-5 w-5 mr-2 " /> Back
-      </button>
-      <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950">
+      <PublicHeader />
+
+      <div className="flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
         <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
           Sign Up for DevPlaza
         </h2>
@@ -184,14 +181,15 @@ export default function Signup() {
 
           <div className="mt-6 text-center">
             <span className="text-sm text-gray-400">Already have an account? </span>
-            <Link 
-              to="/auth/login" 
+            <Link
+              to="/auth/login"
               className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors duration-200"
             >
               Sign In
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -5,8 +5,7 @@ import type { CredentialResponse } from "@react-oauth/google";
 import axios from "axios";
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
-
-import { ArrowLeft } from "lucide-react";
+import PublicHeader from '../common/PublicHeader';
 
 const API = import.meta.env.VITE_BACKEND_URL;
 
@@ -76,17 +75,11 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950">
+      <PublicHeader />
 
-      {/* Back button OUTSIDE the frame at top-left corner */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 flex items-center text-md text-red-400 hover:text-red-300 transition-colors duration-200"
-      >
-        <ArrowLeft className="h-5 w-5 mr-2 " /> Back
-      </button>
-
-      <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
+      <div className="flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-900/30 rounded-lg p-8 shadow-xl">
         <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
           Login to DevPlaza
         </h2>
@@ -182,6 +175,7 @@ const Login: React.FC = () => {
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

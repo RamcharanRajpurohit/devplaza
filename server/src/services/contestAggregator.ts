@@ -172,8 +172,22 @@ export async function fetchAtCoderContests(): Promise<ContestData[]> {
 
     const contests: ContestData[] = [];
     const now = Date.now() / 1000;
+    const oneYearInSeconds = 365 * 24 * 60 * 60; // Filter out permanent practice contests
 
     for (const contest of response.data) {
+      // Skip practice contests (those with very long duration or start at epoch 0)
+      if (contest.start_epoch_second === 0 || contest.duration_second > oneYearInSeconds) {
+        continue;
+      }
+
+      // Only include actual contests (ABC, ARC, AGC, etc.)
+      const contestId = contest.id.toLowerCase();
+      const isActualContest = /^(abc|arc|agc|ahc)\d+/.test(contestId);
+
+      if (!isActualContest) {
+        continue;
+      }
+
       const startTime = new Date(contest.start_epoch_second * 1000);
       const endTime = new Date((contest.start_epoch_second + contest.duration_second) * 1000);
 

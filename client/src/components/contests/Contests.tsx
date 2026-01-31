@@ -3,6 +3,7 @@ import { contestService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { Trophy, Calendar, Clock, ExternalLink, RefreshCw, List, CalendarDays } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
+import PublicHeader from '../common/PublicHeader';
 import { Link } from 'react-router-dom';
 
 interface Contest {
@@ -184,25 +185,7 @@ const Contests: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white">
       {/* Header */}
-      <div className="border-b border-red-900/30 bg-black/30 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent hover:from-red-300 hover:to-red-200 transition-all">
-                DevPlaza
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link to="/potd" className="px-4 py-2 text-gray-300 hover:text-red-400 transition-colors">
-                Problem of the Day
-              </Link>
-              <Link to="/auth/signup" className="px-4 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all">
-                Sign Up
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PublicHeader />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

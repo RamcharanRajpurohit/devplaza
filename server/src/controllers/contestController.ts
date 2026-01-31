@@ -80,7 +80,11 @@ export const getTodayContests = async (req: Request, res: Response) => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const contests = await Contest.find({
+    // Check cache first (contests fetched in last hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    let contests = await Contest.find({
+      fetchedAt: { $gte: oneHourAgo },
       $or: [
         // Contests starting today
         {
@@ -96,6 +100,34 @@ export const getTodayContests = async (req: Request, res: Response) => {
         },
       ],
     }).sort({ startTime: 1 });
+
+    // If no cached contests, fetch fresh data
+    if (contests.length === 0) {
+      console.log('No cached today contests, fetching fresh data...');
+
+      const freshContests = await fetchAllContests();
+
+      // Save to database
+      if (freshContests.length > 0) {
+        await Contest.insertMany(freshContests);
+
+        // Query again for today's contests
+        contests = await Contest.find({
+          $or: [
+            {
+              startTime: {
+                $gte: todayStart,
+                $lte: todayEnd,
+              },
+            },
+            {
+              startTime: { $lt: todayStart },
+              endTime: { $gte: todayStart },
+            },
+          ],
+        }).sort({ startTime: 1 });
+      }
+    }
 
     res.status(200).json({
       success: true,

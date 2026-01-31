@@ -1,31 +1,115 @@
-import { useState, useEffect } from 'react';
-import { Menu, X, Users, Trophy, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Users, Trophy, Star, Code, Calendar, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import PublicHeader from '../common/PublicHeader';
+import { potdService, contestService } from '../../services/api';
+
+interface Problem {
+  platform: string;
+  title: string;
+  url: string;
+  difficulty?: string;
+  tags?: string[];
+}
+
+interface Contest {
+  platform: string;
+  name: string;
+  url: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  status: 'upcoming' | 'ongoing' | 'ended';
+}
 
 const DevPlazaLanding = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [loadingPOTD, setLoadingPOTD] = useState(true);
+  const [loadingContests, setLoadingContests] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated) window.location.href = '/dashboard';
   }, [isAuthenticated]);
 
-  // Button variants styles
-  const btnStyles = {
-    default: 'px-4 py-2 text-gray-300 hover:text-red-400 transition-colors duration-200',
-    primary: 'px-6 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg text-white font-medium transition-all duration-300 shadow-lg shadow-red-900/30',
-    outline: 'px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-900/30 rounded-lg transition-all duration-200'
+  useEffect(() => {
+    fetchPOTDs();
+    fetchContests();
+  }, []);
+
+  const fetchPOTDs = async () => {
+    try {
+      const response = await potdService.getTodaysPOTDs();
+      setProblems(response.data.problems || []);
+    } catch (error) {
+      console.error('Error fetching POTDs:', error);
+    } finally {
+      setLoadingPOTD(false);
+    }
   };
 
-  // Navigation links
-  const navLinks = [
-    { to: '/potd', style: btnStyles.default, text: 'Problem of the Day' },
-    { to: '/contests', style: btnStyles.default, text: 'Contests' },
-    { to: '/auth/login', style: btnStyles.default, text: 'Login' },
-    { to: '/auth/signup', style: btnStyles.primary, text: 'Sign Up' },
-    { to: '/profile/ram', style: btnStyles.outline, text: 'View Demo Profile' }
-  ];
+  const fetchContests = async () => {
+    try {
+      const response = await contestService.getTodayContests();
+      setContests(response.data.contests || []);
+    } catch (error) {
+      console.error('Error fetching contests:', error);
+    } finally {
+      setLoadingContests(false);
+    }
+  };
+
+  const getPlatformColor = (platform: string): string => {
+    const colors: Record<string, string> = {
+      leetcode: 'from-yellow-500 to-orange-500',
+      geeksforgeeks: 'from-green-500 to-emerald-500',
+      naukri: 'from-blue-500 to-indigo-500',
+      codeforces: 'from-blue-500 to-cyan-500',
+      codechef: 'from-amber-500 to-orange-500',
+      atcoder: 'from-purple-500 to-pink-500',
+    };
+    return colors[platform] || 'from-gray-500 to-gray-600';
+  };
+
+  const formatPlatformName = (platform: string): string => {
+    const names: Record<string, string> = {
+      leetcode: 'LeetCode',
+      geeksforgeeks: 'GeeksforGeeks',
+      naukri: 'Naukri Code360',
+      codeforces: 'Codeforces',
+      codechef: 'CodeChef',
+      atcoder: 'AtCoder',
+    };
+    return names[platform] || platform.charAt(0).toUpperCase() + platform.slice(1);
+  };
+
+  const formatTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getTimeUntil = (startTime: string): string => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const diff = start.getTime() - now.getTime();
+
+    if (diff < 0) return 'Started';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `in ${days}d ${hours}h`;
+    if (hours > 0) return `in ${hours}h ${minutes}m`;
+    return `in ${minutes}m`;
+  };
 
   // Features data
   const features = [
@@ -44,44 +128,7 @@ const DevPlazaLanding = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950">
       {/* Navbar */}
-      <nav className="relative z-50 bg-black/50 backdrop-blur-sm border-b border-red-900/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">
-                DevPlaza
-              </h1>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-4">
-                {navLinks.map((link, i) => (
-                  <Link key={i} to={link.to} className={link.style}>{link.text}</Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-300 hover:text-red-400 focus:outline-none transition-colors duration-200">
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden absolute top-16 inset-x-0 bg-black/95 backdrop-blur-sm border-b border-red-900/30">
-            <div className="px-4 pt-4 pb-6 space-y-4">
-              {navLinks.map((link, i) => (
-                <Link key={i} to={link.to} className={`block w-full ${link.style}`}>{link.text}</Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </nav>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -137,7 +184,148 @@ const DevPlazaLanding = () => {
         </div>
       </section>
 
-      {/* Process Section */}
+    
+
+      {/* Problem of the Day Section */}
+      <section className="py-20 bg-black/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex items-center gap-3">
+                <Code className="w-8 h-8 text-red-400" />
+                Today's Problems
+              </h2>
+              <p className="text-gray-400 mt-2">Daily coding challenges from top platforms</p>
+            </div>
+            <Link
+              to="/potd"
+              className="px-4 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-sm sm:text-base"
+            >
+              View All
+            </Link>
+          </div>
+
+          {loadingPOTD ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          ) : problems.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No problems available today</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-gray-900">
+                {problems.map((problem, index) => (
+                  <a
+                    key={index}
+                    href={problem.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 w-80 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                  >
+                    <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getPlatformColor(problem.platform)} text-white text-sm font-semibold inline-block mb-3`}>
+                      {formatPlatformName(problem.platform)}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
+                      {problem.title}
+                    </h3>
+                    {problem.difficulty && (
+                      <div className="text-xs text-gray-400 mb-3">
+                        Difficulty: <span className="text-red-400">{problem.difficulty}</span>
+                      </div>
+                    )}
+                    {problem.tags && problem.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {problem.tags.slice(0, 3).map((tag, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-1 bg-gray-800/50 border border-gray-700 rounded text-xs text-gray-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Contests Section */}
+      <section className="py-20 bg-black/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex items-center gap-3">
+                <Trophy className="w-8 h-8 text-red-400" />
+                Upcoming Contests
+              </h2>
+              <p className="text-gray-400 mt-2">Compete in coding contests from various platforms</p>
+            </div>
+            <Link
+              to="/contests"
+              className="px-4 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-sm sm:text-base"
+            >
+              View All
+            </Link>
+          </div>
+
+          {loadingContests ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          ) : contests.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No contests scheduled today</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-gray-900">
+                {contests.slice(0, 10).map((contest, index) => (
+                  <a
+                    key={index}
+                    href={contest.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 w-80 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getPlatformColor(contest.platform)} text-white text-sm font-semibold`}>
+                        {formatPlatformName(contest.platform)}
+                      </div>
+                      {contest.status === 'ongoing' && (
+                        <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
+                          LIVE
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-3 line-clamp-2">
+                      {contest.name}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>{formatTime(contest.startTime)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-500">Starts {getTimeUntil(contest.startTime)}</div>
+                      <ExternalLink className="w-4 h-4 text-red-400" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+        {/* Process Section */}
       <section className="py-20 bg-black/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
@@ -165,7 +353,7 @@ const DevPlazaLanding = () => {
           </div>
         </div>
       </section>
-
+      
       {/* Footer */}
       <footer className="bg-black border-t border-red-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
