@@ -10,6 +10,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 import helmet from 'helmet';
 import connectDB from './utils/connectDb';
+import { ensureDbConnection } from './middleware/dbMiddleware';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,6 +24,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(helmet());
+
+// Ensure DB connection before all requests (crucial for Vercel/serverless)
+app.use(ensureDbConnection);
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -41,12 +45,15 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ error: 'Internal server error' });
 });
 
-connectDB()
-  .then(() => {
-    app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection failed, not starting server:', err);
-  });
+// For local development only - Vercel handles this automatically
+if (process.env.NODE_ENV !== 'production') {
+  connectDB()
+    .then(() => {
+      app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+    })
+    .catch(err => {
+      console.error('❌ MongoDB connection failed, not starting server:', err);
+    });
+}
 
 export default app;
