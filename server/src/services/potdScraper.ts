@@ -143,8 +143,8 @@ export async function scrapeNaukri(): Promise<ScrapedProblem[]> {
       const p = data.EASY.problem;
       problems.push({
         platform: 'naukri',
-        title: `${p.name} (Easy)`,
-        url: `https://www.naukri.com/code360/problems/${p.slug}`,
+        title: `${p.name}`,
+        url: `https://www.naukri.com/code360/problem-of-the-day/easy`,
         difficulty: 'Easy',
         tags: p.practice_topics || [],
         description: `Avg Time: ${p.avg_time_to_solve}m | Submissions: ${p.submission_count} | Score: ${p.max_score}`,
@@ -156,8 +156,8 @@ export async function scrapeNaukri(): Promise<ScrapedProblem[]> {
       const p = data.MODERATE.problem;
       problems.push({
         platform: 'naukri',
-        title: `${p.name} (Moderate)`,
-        url: `https://www.naukri.com/code360/problems/${p.slug}`,
+        title: `${p.name}`,
+        url: `https://www.naukri.com/code360/problem-of-the-day/moderate`,
         difficulty: 'Medium',
         tags: p.practice_topics || [],
         description: `Avg Time: ${p.avg_time_to_solve}m | Submissions: ${p.submission_count} | Score: ${p.max_score}`,
@@ -169,8 +169,8 @@ export async function scrapeNaukri(): Promise<ScrapedProblem[]> {
       const p = data.HARD.problem;
       problems.push({
         platform: 'naukri',
-        title: `${p.name} (Hard)`,
-        url: `https://www.naukri.com/code360/problems/${p.slug}`,
+        title: `${p.name}`,
+        url: `https://www.naukri.com/code360/problem-of-the-day/hard`,
         difficulty: 'Hard',
         tags: p.practice_topics || [],
         description: `Avg Time: ${p.avg_time_to_solve}m | Submissions: ${p.submission_count} | Score: ${p.max_score}`,

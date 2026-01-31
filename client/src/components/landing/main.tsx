@@ -7,8 +7,8 @@ const DevPlazaLanding = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  // Demo profile username - can be configured via environment variable
-  const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'demo';
+  // Demo profile username
+  const demoUsername = 'ram';
 
   useEffect(() => {
     if (isAuthenticated) window.location.href = '/dashboard';
