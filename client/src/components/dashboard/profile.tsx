@@ -688,8 +688,8 @@ const CodingProfileDashboard: React.FC = () => {
                   {isOwnProfile ? 'Ready to Start Coding?' : 'No Data Available'}
                 </h3>
                 <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base lg:text-lg max-w-md mx-auto">
-                  {isOwnProfile 
-                    ? 'Your coding journey begins here. Start solving problems to see your progress!' 
+                  {isOwnProfile
+                    ? 'Your coding journey begins here. Start solving problems to see your progress!'
                     : 'This user hasn\'t solved any problems yet.'}
                 </p>
                 {isOwnProfile && (
@@ -702,6 +702,138 @@ const CodingProfileDashboard: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* POTD Section */}
+            <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div>
+                  <h3 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent flex items-center gap-2 sm:gap-3">
+                    <Code className="w-5 h-5 sm:w-6 sm:h-6" />
+                    Problem of the Day
+                  </h3>
+                  <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">Practice daily problems from various platforms</p>
+                </div>
+                <Link
+                  to="/potd"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-xs sm:text-sm"
+                >
+                  View All
+                </Link>
+              </div>
+
+              {loadingPOTD ? (
+                <div className="text-center py-8 sm:py-12">
+                  <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+                </div>
+              ) : problems.length === 0 ? (
+                <div className="text-center py-8 sm:py-12 text-gray-500">
+                  <Code className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">No problems available today</p>
+                </div>
+              ) : (
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 sm:pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {problems.map((problem, index) => (
+                    <a
+                      key={index}
+                      href={problem.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 w-72 sm:w-80 bg-gradient-to-br from-black via-gray-900 to-red-950 border border-red-800/20 rounded-xl p-4 sm:p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                    >
+                      <div className={`px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-gradient-to-r ${getPlatformColor(problem.platform)} text-white text-xs sm:text-sm font-semibold inline-block mb-2 sm:mb-3`}>
+                        {formatPlatformName(problem.platform)}
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2 line-clamp-2">
+                        {problem.title}
+                      </h3>
+                      {problem.difficulty && (
+                        <div className="text-xs text-gray-400 mb-2 sm:mb-3">
+                          Difficulty: <span className="text-red-400">{problem.difficulty}</span>
+                        </div>
+                      )}
+                      {problem.tags && problem.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {problem.tags.slice(0, 3).map((tag, i) => (
+                            <span
+                              key={i}
+                              className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gray-800/50 border border-gray-700 rounded text-xs text-gray-300"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Contests Section */}
+            <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-4 sm:p-6 lg:p-8 shadow-xl">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div>
+                  <h3 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent flex items-center gap-2 sm:gap-3">
+                    <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
+                    Upcoming Contests
+                  </h3>
+                  <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">Compete in coding contests from various platforms</p>
+                </div>
+                <Link
+                  to="/contests"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-xs sm:text-sm"
+                >
+                  View All
+                </Link>
+              </div>
+
+              {loadingContests ? (
+                <div className="text-center py-8 sm:py-12">
+                  <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+                </div>
+              ) : contests.length === 0 ? (
+                <div className="text-center py-8 sm:py-12 text-gray-500">
+                  <Trophy className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">No contests scheduled today</p>
+                </div>
+              ) : (
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 sm:pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {contests.slice(0, 10).map((contest, index) => (
+                    <a
+                      key={index}
+                      href={contest.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 w-72 sm:w-80 bg-gradient-to-br from-black via-gray-900 to-red-950 border border-red-800/20 rounded-xl p-4 sm:p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                    >
+                      <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className={`px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-gradient-to-r ${getPlatformColor(contest.platform)} text-white text-xs sm:text-sm font-semibold`}>
+                          {formatPlatformName(contest.platform)}
+                        </div>
+                        {contest.status === 'ongoing' && (
+                          <div className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
+                            LIVE
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3 line-clamp-2">
+                        {contest.name}
+                      </h3>
+                      <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400 mb-1.5 sm:mb-2">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span>{formatTime(contest.startTime)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500">Starts {getTimeUntil(contest.startTime)}</div>
+                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
