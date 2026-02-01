@@ -216,7 +216,7 @@ const DevPlazaLanding = () => {
             </div>
           ) : (
             <div className="relative">
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-gray-900">
+              <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {problems.map((problem, index) => (
                   <a
                     key={index}
@@ -286,7 +286,7 @@ const DevPlazaLanding = () => {
             </div>
           ) : (
             <div className="relative">
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-gray-900">
+              <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {contests.slice(0, 10).map((contest, index) => (
                   <a
                     key={index}

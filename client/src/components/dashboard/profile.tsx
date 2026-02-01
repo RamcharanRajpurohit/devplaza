@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { profileService } from '../../services/api';
+import { profileService, potdService, contestService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Sidebar from './sidepannel';
 import DonutChart from './bar';
@@ -10,13 +10,33 @@ import {
   Trophy,
   Share2,
   Menu,
-  UserPlus
+  UserPlus,
+  Calendar,
+  ExternalLink
 } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorAlert from '../common/ErrorAlert';
 import type EnhancedProfileData from '../../types/enhanceData';
 import PlatformCard from './platformcard';
 import DifficultyBar from './diifBar';
+
+interface Problem {
+  platform: string;
+  title: string;
+  url: string;
+  difficulty?: string;
+  tags?: string[];
+}
+
+interface Contest {
+  platform: string;
+  name: string;
+  url: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  status: 'upcoming' | 'ongoing' | 'ended';
+}
 
 const CodingProfileDashboard: React.FC = () => {
   const { user, logout, setIsProfileComplet } = useAuth();
@@ -29,6 +49,10 @@ const CodingProfileDashboard: React.FC = () => {
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [loadingPOTD, setLoadingPOTD] = useState(true);
+  const [loadingContests, setLoadingContests] = useState(true);
 
   // Determine if viewing own profile or someone else's
   const viewingUsername = urlUsername || user?.username;
@@ -37,6 +61,8 @@ const CodingProfileDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchProfileData();
+    fetchPOTDs();
+    fetchContests();
   }, [viewingUsername]);
 
   const fetchProfileData = async () => {
@@ -71,6 +97,78 @@ const CodingProfileDashboard: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const fetchPOTDs = async () => {
+    try {
+      const response = await potdService.getTodaysPOTDs();
+      setProblems(response.data.problems || []);
+    } catch (error) {
+      console.error('Error fetching POTDs:', error);
+    } finally {
+      setLoadingPOTD(false);
+    }
+  };
+
+  const fetchContests = async () => {
+    try {
+      const response = await contestService.getTodayContests();
+      setContests(response.data.contests || []);
+    } catch (error) {
+      console.error('Error fetching contests:', error);
+    } finally {
+      setLoadingContests(false);
+    }
+  };
+
+  const getPlatformColor = (platform: string): string => {
+    const colors: Record<string, string> = {
+      leetcode: 'from-yellow-500 to-orange-500',
+      geeksforgeeks: 'from-green-500 to-emerald-500',
+      naukri: 'from-blue-500 to-indigo-500',
+      codeforces: 'from-blue-500 to-cyan-500',
+      codechef: 'from-amber-500 to-orange-500',
+      atcoder: 'from-purple-500 to-pink-500',
+    };
+    return colors[platform] || 'from-gray-500 to-gray-600';
+  };
+
+  const formatPlatformName = (platform: string): string => {
+    const names: Record<string, string> = {
+      leetcode: 'LeetCode',
+      geeksforgeeks: 'GeeksforGeeks',
+      naukri: 'Naukri Code360',
+      codeforces: 'Codeforces',
+      codechef: 'CodeChef',
+      atcoder: 'AtCoder',
+    };
+    return names[platform] || platform.charAt(0).toUpperCase() + platform.slice(1);
+  };
+
+  const formatTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getTimeUntil = (startTime: string): string => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const diff = start.getTime() - now.getTime();
+
+    if (diff < 0) return 'Started';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `in ${days}d ${hours}h`;
+    if (hours > 0) return `in ${hours}h ${minutes}m`;
+    return `in ${minutes}m`;
   };
 
   const handleLogout = async () => {
@@ -145,30 +243,165 @@ const CodingProfileDashboard: React.FC = () => {
   // Show profile incomplete message for own profile
   if (profileIncomplete && isOwnProfile) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-8 sm:p-12 text-center shadow-2xl">
-        <div className="mb-6">
-          <UserPlus className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400 mb-4" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-950 text-white p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Complete Profile Banner */}
+        <div className="max-w-2xl mx-auto mb-8 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-8 sm:p-12 text-center shadow-2xl">
+          <div className="mb-6">
+            <UserPlus className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400 mb-4" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
+            Complete Your Profile
+          </h2>
+          <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-md mx-auto">
+            Please complete your profile by adding your coding platform links to start tracking your progress and showcase your achievements.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+              onClick={() => navigate('/complete-profile')}
+              className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
+            >
+              Complete Profile Now
+            </button>
+            <button
+              onClick={handleLogout}
+              className="bg-gray-700 px-8 py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
+            >
+              Logout
+            </button>
+          </div>
         </div>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-red-400 to-red-200 bg-clip-text text-transparent">
-          Complete Your Profile
-        </h2>
-        <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-md mx-auto">
-          Please complete your profile by adding your coding platform links to start tracking your progress and showcase your achievements.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <button
-            onClick={() => navigate('/complete-profile')}
-            className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-3 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
-          >
-            Complete Profile Now
-          </button>
-          <button
-            onClick={handleLogout} // make sure handleLogout is in scope
-            className="bg-gray-700 px-8 py-3 rounded-lg hover:bg-gray-600 transition-all duration-300 shadow-lg font-semibold text-base sm:text-lg hover:scale-105 transform"
-          >
-            Logout
-          </button>
+
+        {/* POTD Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex items-center gap-3">
+                <Code className="w-7 h-7 text-red-400" />
+                Problem of the Day
+              </h2>
+              <p className="text-gray-400 mt-2">Practice daily problems from various platforms</p>
+            </div>
+            <Link
+              to="/potd"
+              className="px-4 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-sm sm:text-base"
+            >
+              View All
+            </Link>
+          </div>
+
+          {loadingPOTD ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          ) : problems.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl">
+              <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No problems available today</p>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {problems.map((problem, index) => (
+                <a
+                  key={index}
+                  href={problem.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 w-80 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                >
+                  <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getPlatformColor(problem.platform)} text-white text-sm font-semibold inline-block mb-3`}>
+                    {formatPlatformName(problem.platform)}
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">
+                    {problem.title}
+                  </h3>
+                  {problem.difficulty && (
+                    <div className="text-xs text-gray-400 mb-3">
+                      Difficulty: <span className="text-red-400">{problem.difficulty}</span>
+                    </div>
+                  )}
+                  {problem.tags && problem.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {problem.tags.slice(0, 3).map((tag, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-gray-800/50 border border-gray-700 rounded text-xs text-gray-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Contests Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex items-center gap-3">
+                <Trophy className="w-7 h-7 text-red-400" />
+                Upcoming Contests
+              </h2>
+              <p className="text-gray-400 mt-2">Compete in coding contests from various platforms</p>
+            </div>
+            <Link
+              to="/contests"
+              className="px-4 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 rounded-lg font-medium transition-all text-sm sm:text-base"
+            >
+              View All
+            </Link>
+          </div>
+
+          {loadingContests ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-red-400 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          ) : contests.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl">
+              <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No contests scheduled today</p>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {contests.slice(0, 10).map((contest, index) => (
+                <a
+                  key={index}
+                  href={contest.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 w-80 bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl p-6 hover:border-red-600/50 transition-all duration-300 hover:scale-105"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getPlatformColor(contest.platform)} text-white text-sm font-semibold`}>
+                      {formatPlatformName(contest.platform)}
+                    </div>
+                    {contest.status === 'ongoing' && (
+                      <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
+                        LIVE
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3 line-clamp-2">
+                    {contest.name}
+                  </h3>
+                  <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatTime(contest.startTime)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500">Starts {getTimeUntil(contest.startTime)}</div>
+                    <ExternalLink className="w-4 h-4 text-red-400" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

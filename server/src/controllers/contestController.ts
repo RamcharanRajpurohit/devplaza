@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Contest } from '../models/contest';
 import { fetchAllContests } from '../services/contestAggregator';
 
 /**
@@ -8,56 +7,24 @@ import { fetchAllContests } from '../services/contestAggregator';
  */
 export const getUpcomingContests = async (req: Request, res: Response) => {
   try {
+    console.log('🔍 Fetching upcoming contests from APIs...');
+
     const now = new Date();
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
-    // Check cache first (contests fetched in last hour)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    // Fetch directly from APIs
+    const allContests = await fetchAllContests();
 
-    let contests = await Contest.find({
-      fetchedAt: { $gte: oneHourAgo },
-      startTime: {
-        $gte: now,
-        $lte: sevenDaysFromNow,
-      },
-    }).sort({ startTime: 1 });
-
-    // If no cached contests, fetch fresh data
-    if (contests.length === 0) {
-      console.log('No cached contests, fetching fresh data...');
-
-      const freshContests = await fetchAllContests();
-
-      // Filter for next 7 days
-      const upcomingContests = freshContests.filter(
-        (c) => c.startTime >= now && c.startTime <= sevenDaysFromNow
-      );
-
-      // Save to database
-      if (upcomingContests.length > 0) {
-        await Contest.insertMany(upcomingContests);
-        contests = await Contest.find({
-          startTime: {
-            $gte: now,
-            $lte: sevenDaysFromNow,
-          },
-        }).sort({ startTime: 1 });
-      }
-    }
+    // Filter for next 7 days
+    const upcomingContests = allContests
+      .filter((c) => c.startTime >= now && c.startTime <= sevenDaysFromNow)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     res.status(200).json({
       success: true,
-      count: contests.length,
-      contests: contests.map((c) => ({
-        platform: c.platform,
-        name: c.name,
-        url: c.url,
-        startTime: c.startTime,
-        endTime: c.endTime,
-        duration: c.duration,
-        status: c.status,
-      })),
+      count: upcomingContests.length,
+      contests: upcomingContests,
     });
   } catch (error) {
     console.error('Error getting contests:', error);
@@ -74,74 +41,33 @@ export const getUpcomingContests = async (req: Request, res: Response) => {
  */
 export const getTodayContests = async (req: Request, res: Response) => {
   try {
+    console.log('🔍 Fetching today\'s contests from APIs...');
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    // Check cache first (contests fetched in last hour)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    // Fetch directly from APIs
+    const allContests = await fetchAllContests();
 
-    let contests = await Contest.find({
-      fetchedAt: { $gte: oneHourAgo },
-      $or: [
+    // Filter for today's contests
+    const todayContests = allContests
+      .filter((c) => {
         // Contests starting today
-        {
-          startTime: {
-            $gte: todayStart,
-            $lte: todayEnd,
-          },
-        },
+        const startsToday = c.startTime >= todayStart && c.startTime <= todayEnd;
         // Ongoing contests (started before today, ending today or later)
-        {
-          startTime: { $lt: todayStart },
-          endTime: { $gte: todayStart },
-        },
-      ],
-    }).sort({ startTime: 1 });
-
-    // If no cached contests, fetch fresh data
-    if (contests.length === 0) {
-      console.log('No cached today contests, fetching fresh data...');
-
-      const freshContests = await fetchAllContests();
-
-      // Save to database
-      if (freshContests.length > 0) {
-        await Contest.insertMany(freshContests);
-
-        // Query again for today's contests
-        contests = await Contest.find({
-          $or: [
-            {
-              startTime: {
-                $gte: todayStart,
-                $lte: todayEnd,
-              },
-            },
-            {
-              startTime: { $lt: todayStart },
-              endTime: { $gte: todayStart },
-            },
-          ],
-        }).sort({ startTime: 1 });
-      }
-    }
+        const ongoingToday = c.startTime < todayStart && c.endTime >= todayStart;
+        return startsToday || ongoingToday;
+      })
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     res.status(200).json({
       success: true,
       date: todayStart,
-      count: contests.length,
-      contests: contests.map((c) => ({
-        platform: c.platform,
-        name: c.name,
-        url: c.url,
-        startTime: c.startTime,
-        endTime: c.endTime,
-        duration: c.duration,
-        status: c.status,
-      })),
+      count: todayContests.length,
+      contests: todayContests,
     });
   } catch (error) {
     console.error('Error getting today contests:', error);
@@ -153,42 +79,26 @@ export const getTodayContests = async (req: Request, res: Response) => {
 };
 
 /**
- * Manual refresh contests
- * Can be called by cron or admin
+ * Manual refresh contests (now just fetches fresh data)
+ * No database operations needed
  */
 export const refreshContests = async (req: Request, res: Response) => {
   try {
-    console.log('🔄 Manually refreshing contests...');
-
-    // Delete old contests (older than 1 day)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    await Contest.deleteMany({
-      endTime: { $lt: oneDayAgo },
-    });
+    console.log('🔄 Fetching fresh contests from APIs...');
 
     // Fetch fresh contests
     const freshContests = await fetchAllContests();
 
-    // Delete existing contests and insert fresh ones
-    const now = new Date();
-    await Contest.deleteMany({
-      startTime: { $gte: now },
-    });
-
-    if (freshContests.length > 0) {
-      await Contest.insertMany(freshContests);
-    }
-
     res.status(200).json({
       success: true,
-      message: 'Contests refreshed successfully',
+      message: 'Contests fetched successfully',
       count: freshContests.length,
     });
   } catch (error) {
-    console.error('Error refreshing contests:', error);
+    console.error('Error fetching contests:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to refresh contests',
+      error: 'Failed to fetch contests',
     });
   }
 };
@@ -198,42 +108,27 @@ export const refreshContests = async (req: Request, res: Response) => {
  */
 export const getContestStats = async (req: Request, res: Response) => {
   try {
-    const totalContests = await Contest.countDocuments();
+    console.log('📊 Fetching contest statistics from APIs...');
+
+    const allContests = await fetchAllContests();
     const now = new Date();
 
-    const upcomingCount = await Contest.countDocuments({
-      startTime: { $gt: now },
-    });
+    const upcomingContests = allContests.filter((c) => c.startTime > now);
+    const ongoingContests = allContests.filter((c) => c.startTime <= now && c.endTime >= now);
 
-    const ongoingCount = await Contest.countDocuments({
-      startTime: { $lte: now },
-      endTime: { $gte: now },
+    // Count by platform
+    const platformCounts: Record<string, number> = {};
+    upcomingContests.forEach((c) => {
+      platformCounts[c.platform] = (platformCounts[c.platform] || 0) + 1;
     });
-
-    const platformCounts = await Contest.aggregate([
-      {
-        $match: {
-          startTime: { $gte: now },
-        },
-      },
-      {
-        $group: {
-          _id: '$platform',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
 
     res.status(200).json({
       success: true,
       stats: {
-        total: totalContests,
-        upcoming: upcomingCount,
-        ongoing: ongoingCount,
-        platforms: platformCounts.reduce((acc, item) => {
-          acc[item._id] = item.count;
-          return acc;
-        }, {} as Record<string, number>),
+        total: allContests.length,
+        upcoming: upcomingContests.length,
+        ongoing: ongoingContests.length,
+        platforms: platformCounts,
       },
     });
   } catch (error) {

@@ -337,7 +337,7 @@ const Contests: React.FC = () => {
         ) : (
           /* Calendar Grid View - 7 columns with time slots */
           <div className="bg-gradient-to-br from-gray-900 via-red-950 to-black border border-red-800/30 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div className="min-w-[600px]">
                 {/* Header Row - Day Names */}
                 <div className="grid grid-cols-8 border-b border-red-800/30 bg-black/40">

@@ -172,19 +172,28 @@ export async function fetchAtCoderContests(): Promise<ContestData[]> {
 
     const contests: ContestData[] = [];
     const now = Date.now() / 1000;
-    const oneYearInSeconds = 365 * 24 * 60 * 60; // Filter out permanent practice contests
+    const oneYearInSeconds = 365 * 24 * 60 * 60;
+
+    // Known practice/permanent contests to exclude
+    const excludeContestIds = [
+      'APG4b', 'APG4bPython', 'abs', 'adt_top', 'adt_all', 'adt_medium', 'adt_easy',
+      'practice', 'practice2', 'math-and-algorithm', 'tessoku-book', 'typical90',
+      'dp', 'tdpc', 'edpc', 'past-sample', 'language-test-ver1'
+    ];
 
     for (const contest of response.data) {
-      // Skip practice contests (those with very long duration or start at epoch 0)
-      if (contest.start_epoch_second === 0 || contest.duration_second > oneYearInSeconds) {
+      // Skip contests that start at epoch 0 (1970-01-01)
+      if (contest.start_epoch_second === 0) {
         continue;
       }
 
-      // Only include actual contests (ABC, ARC, AGC, etc.)
-      const contestId = contest.id.toLowerCase();
-      const isActualContest = /^(abc|arc|agc|ahc)\d+/.test(contestId);
+      // Skip contests with very long duration (> 1 year = permanent practice)
+      if (contest.duration_second > oneYearInSeconds) {
+        continue;
+      }
 
-      if (!isActualContest) {
+      // Skip known practice/training contests
+      if (excludeContestIds.includes(contest.id)) {
         continue;
       }
 
@@ -216,6 +225,7 @@ export async function fetchAtCoderContests(): Promise<ContestData[]> {
       }
     }
 
+    console.log(`✅ Fetched ${contests.length} AtCoder contests`);
     return contests;
   } catch (error) {
     console.error('Error fetching AtCoder contests:', error);
